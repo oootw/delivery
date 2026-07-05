@@ -1,0 +1,14 @@
+# TransformationDocumentGetItem
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**amount** | **float** | Product quantity | [optional]
+**amount_factor** | **float** | Write-off factor | [optional]
+**amount_unit** | **string** | Unit of measure identifier (GUID) | [optional]
+**num** | **int** | Item sequence number | [optional]
+**product** | **string** | Product identifier (GUID) | [optional]
+**product_size** | **string** | Product size identifier (GUID) | [optional]
+
+[[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)
