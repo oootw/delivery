@@ -1,0 +1,9 @@
+# RefundMethodData
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**type** | [**\YOOMONEY\Model\RefundMethodType**](RefundMethodType.md) |  |
+
+[[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

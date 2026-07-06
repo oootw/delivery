@@ -1,0 +1,38 @@
+{
+    "description": "The YooMoney API Reference describes all the YooMoney API methods. The API allows you to process online payments via different methods and make payouts. More about integration via the YooMoney API: Integration guide: https://yookassa.ru/developers: description of payment solutions based on the YooMoney API as well as links to detailed instructions.; Interaction format: https://yookassa.ru/developers/using-api/interaction-format: description of request formats, requirements for request authentication and idempotency key, specifics of response processing.; OpenAPI specification: https://yookassa.ru/developers/using-api/openapi-specification: information about the YooMoney API specification, link for downloading the specification in the YAML format.; Ready-made SDK: https://yookassa.ru/developers/using-api/using-sdks: links to ready-made solutions for PHP, Python, and other programming languages.; Incoming notifications: https://yookassa.ru/developers/using-api/webhooks: description of the operating procedure for notifications (webhook, callback) sent to track object statuses. YooMoney API changelog: https://yookassa.ru/developers/using-api/changelog",
+    "keywords": [
+        "openapitools",
+        "openapi-generator",
+        "openapi",
+        "php",
+        "sdk",
+        "rest",
+        "api"
+    ],
+    "homepage": "https://openapi-generator.tech",
+    "license": "unlicense",
+    "authors": [
+        {
+            "name": "OpenAPI",
+            "homepage": "https://openapi-generator.tech"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "guzzlehttp/guzzle": "^7.3",
+        "guzzlehttp/psr7": "^1.7 || ^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0 || ^9.0",
+        "friendsofphp/php-cs-fixer": "^3.5"
+    },
+    "autoload": {
+        "psr-4": { "YOOMONEY\\" : "lib/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "YOOMONEY\\Test\\" : "test/" }
+    }
+}

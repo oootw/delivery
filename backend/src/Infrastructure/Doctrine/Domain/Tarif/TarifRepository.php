@@ -2,13 +2,11 @@
 
 namespace App\Infrastructure\Doctrine\Domain\Tarif;
 
-use App\Application\Tarif\Entity\Tarif\TarifRepositoryInterface;
-use App\Infrastructure\Doctrine\Domain\Tarif\Tarif;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
 use App\Application\Tarif\Entity\Tarif\Tarif as TarifEntity;
 use App\Application\Tarif\Entity\Tarif\TarifCodeEnum;
-use Override;
+use App\Application\Tarif\Entity\Tarif\TarifRepositoryInterface;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Tarif>
@@ -39,25 +37,6 @@ class TarifRepository extends ServiceEntityRepository implements TarifRepository
                 features: [],
             ),
             $tarifs
-        );
-    }
-
-    #[Override]
-    public function getByTarifCode(TarifCodeEnum $tarifCode): ?TarifEntity
-    {
-        $tarif = $this->findOneBy(['tarifCode' => $tarifCode]);
-
-        if ($tarif === null) {
-            throw new \DomainException('Тариф не найден');
-        }
-
-        return new TarifEntity(
-            id: $tarif->getId(),
-            tarifCode: $tarif->getTarifCode(),
-            name: $tarif->getName(),
-            description: $tarif->getDescription(),
-            price: $tarif->getPrice(),
-            features: [],
         );
     }
 
