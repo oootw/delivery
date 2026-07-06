@@ -11,5 +11,5 @@ interface TarifRepositoryInterface
      */
     public function getAll(): array;
 
-    public function findByTarifCode(TarifCodeEnum $tarifCode): ?Tarif;
+    public function getByTarifCode(TarifCodeEnum $tarifCode): ?Tarif;
 }

@@ -24,6 +24,8 @@ class Tarif
         TarifCodeEnum $tarifCode,
         string $description,
         int $price,
+
+        /** @var FeatureCodeEnum[] */
         array $features,
     ): self {
         return new self(

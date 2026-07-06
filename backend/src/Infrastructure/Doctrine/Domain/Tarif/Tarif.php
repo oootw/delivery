@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace App\Infrastructure\Doctrine\Domain\Tarif;
 
 use App\Application\Tarif\Entity\Tarif\TarifCodeEnum;
-use App\Repository\TarifRepository;
-use Doctrine\DBAL\Types\Types;
+use App\Infrastructure\Doctrine\Domain\Tarif\TarifRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TarifRepository::class)]
@@ -18,8 +17,8 @@ class Tarif
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(type: Types::ENUM, enumType: TarifCodeEnum::class)]
-    private array $tarifCode = [];
+    #[ORM\Column(enumType: TarifCodeEnum::class)]
+    private ?TarifCodeEnum $tarifCode = null;
 
     #[ORM\Column(length: 1000)]
     private ?string $description = null;
@@ -44,15 +43,12 @@ class Tarif
         return $this;
     }
 
-    /**
-     * @return TarifCodeEnum[]
-     */
-    public function getTarifCode(): array
+    public function getTarifCode(): ?TarifCodeEnum
     {
         return $this->tarifCode;
     }
 
-    public function setTarifCode(array $tarifCode): static
+    public function setTarifCode(TarifCodeEnum $tarifCode): static
     {
         $this->tarifCode = $tarifCode;
 
