@@ -60,13 +60,13 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "App\\": "src/",
+            "IIKO\\": "libs/IIKO/lib/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/",
-            "IIKO\\": "src/Infrastructure/IntegrationSystem/IIKO/lib"
+            "App\\Tests\\": "tests/"
         }
     },
     "replace": {

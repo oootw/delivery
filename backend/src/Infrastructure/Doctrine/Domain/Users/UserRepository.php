@@ -4,18 +4,25 @@ namespace App\Infrastructure\Doctrine\Domain\Users;
 
 use App\Application\Authorize\Entity\User\User as EntityUser;
 use App\Application\Authorize\Entity\User\UserRepositoryInterface;
+use App\Application\Authorize\Events\CreateNewUserEvent\CreateNewUserEvent;
+use App\Application\Authorize\Events\CreateNewUserEvent\CreateNewUserEventPayload;
 use App\Infrastructure\Doctrine\Domain\Users\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
  */
 class UserRepository extends ServiceEntityRepository implements UserRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    private EventDispatcherInterface $dispatcher;
+
+    public function __construct(ManagerRegistry $registry, EventDispatcherInterface $dispatcher)
     {
         parent::__construct($registry, User::class);
+
+        $this->dispatcher = $dispatcher;
     }
 
     public function findByPhone(string $phone): ?EntityUser
@@ -40,6 +47,18 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
 
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
+
+        $this->dispatcher->dispatch(
+            new CreateNewUserEvent(
+                new CreateNewUserEventPayload(
+                    userId: $user->getId(),
+                    phone: $user->getPhone(),
+                    name: $user->getFullName(),
+                    createdAt: $user->getCreatedAt(),
+                    birthDate: $user->getBrithDate(),
+                )
+            )
+        );
 
         return $user->getId();
     }
