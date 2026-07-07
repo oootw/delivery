@@ -6,6 +6,8 @@ use App\Application\Authorize\Entity\User\User as EntityUser;
 use App\Application\Authorize\Entity\User\UserRepositoryInterface;
 use App\Application\Authorize\Events\CreateNewUserEvent\CreateNewUserEvent;
 use App\Application\Authorize\Events\CreateNewUserEvent\CreateNewUserEventPayload;
+use App\Application\Authorize\Events\OnAfterSaveNewUser\OnAfterSaveNewUserEvent;
+use App\Application\Authorize\Events\OnBeforeSaveNewUser\OnBeforeSaveNewUserEvent;
 use App\Infrastructure\Doctrine\Domain\Users\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -45,18 +47,18 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
         $user->setIsActive(true);
         $user->setCreatedAt(new \DateTimeImmutable());
 
+        $this->dispatcher->dispatch(
+            new OnBeforeSaveNewUserEvent(
+                user: $user,
+            )
+        );
+
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
 
         $this->dispatcher->dispatch(
-            new CreateNewUserEvent(
-                new CreateNewUserEventPayload(
-                    userId: $user->getId(),
-                    phone: $user->getPhone(),
-                    name: $user->getFullName(),
-                    createdAt: $user->getCreatedAt(),
-                    birthDate: $user->getBrithDate(),
-                )
+            new OnAfterSaveNewUserEvent(
+                user: $user
             )
         );
 
