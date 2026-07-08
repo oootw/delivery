@@ -10,6 +10,7 @@ use App\Application\Authorize\Query\FindUserByPhone\Fetcher as FindUserByPhoneFe
 use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
 use App\Application\Authorize\Query\GetRefreshTokensAvailable\Fetcher as GetRefreshTokensAvailableFetcher;
 use App\Application\Authorize\Query\GetRefreshTokensAvailable\Query as GetRefreshTokensAvailableQuery;
+use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -55,27 +56,26 @@ class RefreshTokensAction extends AbstractController
                 ),
             );
 
-            return $this->json([
-                'is_success' => true,
+            return ApiResponse::success([
                 'access_token' => $tokens->accessToken,
                 'refresh_token' => $tokens->refreshToken,
                 'expires_in' => $tokens->expiresIn,
             ]);
         } catch (InvalidArgumentException $exception) {
-            return $this->json([
-                'is_success' => false,
-                'error' => $exception->getMessage(),
-            ], Response::HTTP_UNAUTHORIZED);
+            return ApiResponse::error(
+                error: $exception->getMessage(),
+                status: Response::HTTP_UNAUTHORIZED,
+            );
         } catch (\Throwable $exception) {
             LoggerService::toFile(
                 fileName: 'auth/refresh-tokens',
                 message: $exception->getMessage(),
             );
 
-            return $this->json([
-                'is_success' => false,
-                'error' => 'Что-то пошло не так',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error(
+                error: 'Что-то пошло не так',
+                status: Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
     }
 }

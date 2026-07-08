@@ -8,10 +8,18 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * Пользователь. В API аутентифицируется по телефону + JWT (см. JwtAuthenticator),
+ * поэтому пароля обычно нет. Пароль и флаг isAdmin нужны только для входа в
+ * админку (firewall `admin`, форма логина): админ = пользователь с isAdmin=true
+ * и заданным паролем.
+ */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -33,6 +41,13 @@ class User
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isAdmin = false;
+
+    /** Хэш пароля для входа в админку; у обычных пользователей отсутствует. */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $password = null;
+
     /**
      * @var Collection<int, Token>
      */
@@ -43,6 +58,51 @@ class User
     {
         $this->tokens = new ArrayCollection();
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->isAdmin;
+    }
+
+    public function setIsAdmin(bool $isAdmin): static
+    {
+        $this->isAdmin = $isAdmin;
+
+        return $this;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(?string $password): static
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getRoles(): array
+    {
+        $roles = ['ROLE_USER'];
+
+        if ($this->isAdmin) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+
+        return $roles;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->phone;
+    }
+
+    public function eraseCredentials(): void {}
 
     public function getId(): ?int
     {

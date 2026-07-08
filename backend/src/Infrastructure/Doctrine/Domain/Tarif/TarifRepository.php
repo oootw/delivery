@@ -21,22 +21,28 @@ class TarifRepository extends ServiceEntityRepository implements TarifRepository
     /** @return TarifEntity[] */
     public function getAll(): array
     {
-        $tarifs = $this->findAll();
-
-        if ($tarifs === null) {
-            throw new \DomainException('Тарифы не найдены');
-        }
-
         return array_map(
-            fn(Tarif $tarif) => new TarifEntity(
-                id: $tarif->getId(),
-                tarifCode: $tarif->getTarifCode(),
-                name: $tarif->getName(),
-                description: $tarif->getDescription(),
-                price: $tarif->getPrice(),
-                features: [],
-            ),
-            $tarifs
+            fn(Tarif $tarif) => $this->toEntity($tarif),
+            $this->findAll(),
+        );
+    }
+
+    public function getByTarifCode(TarifCodeEnum $tarifCode): ?TarifEntity
+    {
+        $tarif = $this->findOneBy(['tarifCode' => $tarifCode]);
+
+        return $tarif !== null ? $this->toEntity($tarif) : null;
+    }
+
+    private function toEntity(Tarif $tarif): TarifEntity
+    {
+        return new TarifEntity(
+            id: $tarif->getId(),
+            tarifCode: $tarif->getTarifCode(),
+            name: $tarif->getName(),
+            description: $tarif->getDescription(),
+            price: $tarif->getPrice(),
+            features: [],
         );
     }
 

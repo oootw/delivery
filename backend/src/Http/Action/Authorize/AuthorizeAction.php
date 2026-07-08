@@ -11,6 +11,7 @@ use App\Application\Authorize\Command\CreateAuthorizeTokens\Handler as CreateAut
 use App\Application\Authorize\Entity\Code\CodeTypeEnum;
 use App\Application\Authorize\Query\FindUserByPhone\Fetcher;
 use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -62,27 +63,23 @@ class AuthorizeAction extends AbstractController
                 ),
             );
 
-            return $this->json([
-                'is_success' => true,
+            return ApiResponse::success([
                 'access_token' => $tokens->accessToken,
                 'refresh_token' => $tokens->refreshToken,
                 'expires_in' => $tokens->expiresIn,
             ]);
         } catch (InvalidArgumentException $exception) {
-            return $this->json([
-                'is_success' => false,
-                'error' => $exception->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
+            return ApiResponse::error($exception->getMessage());
         } catch (\Throwable $exception) {
             LoggerService::toFile(
                 fileName: 'auth/authorize',
                 message: $exception->getMessage(),
             );
 
-            return $this->json([
-                'is_success' => false,
-                'error' => 'Что-то пошло не так',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error(
+                error: 'Что-то пошло не так',
+                status: Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
     }
 }

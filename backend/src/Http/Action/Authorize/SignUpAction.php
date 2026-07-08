@@ -10,6 +10,7 @@ use App\Application\Authorize\Command\CreateUser\Command as CreateUserCommand;
 use App\Application\Authorize\Command\CreateUser\Handler as CreateUserHandler;
 use App\Application\Authorize\Query\FindUserByPhone\Fetcher as FindUserByPhoneFetcher;
 use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -55,33 +56,28 @@ class SignUpAction extends AbstractController
                 ),
             );
 
-            return $this->json([
-                'is_success' => true,
+            return ApiResponse::success([
                 'access_token' => $tokens->accessToken,
                 'refresh_token' => $tokens->refreshToken,
                 'expires_in' => $tokens->expiresIn,
             ]);
         } catch (InvalidArgumentException $exception) {
-            $response = [
-                'is_success' => false,
-                'error' => $exception->getMessage(),
-            ];
+            $isPhoneTaken = $exception->getMessage() === 'Не удалось создать пользователя';
 
-            if ($exception->getMessage() === 'Не удалось создать пользователя') {
-                $response['code'] = 'USER_EXIST';
-            }
-
-            return $this->json($response, Response::HTTP_BAD_REQUEST);
+            return ApiResponse::error(
+                error: $exception->getMessage(),
+                code: $isPhoneTaken ? 'USER_EXIST' : null,
+            );
         } catch (\Throwable $exception) {
             LoggerService::toFile(
                 fileName: 'auth/sign-up',
                 message: $exception->getMessage(),
             );
 
-            return $this->json([
-                'is_success' => false,
-                'error' => 'Что-то пошло не так',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error(
+                error: 'Что-то пошло не так',
+                status: Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
     }
 }

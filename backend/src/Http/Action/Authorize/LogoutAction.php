@@ -8,6 +8,7 @@ use App\Application\Authorize\Command\Logout\Command as LogoutCommand;
 use App\Application\Authorize\Command\Logout\Handler as LogoutHandler;
 use App\Application\Authorize\Query\FindUserByPhone\Fetcher as FindUserByPhoneFetcher;
 use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -43,24 +44,19 @@ class LogoutAction extends AbstractController
                 );
             }
 
-            return $this->json([
-                'is_success' => true,
-            ]);
+            return ApiResponse::success();
         } catch (InvalidArgumentException $exception) {
-            return $this->json([
-                'is_success' => false,
-                'error' => $exception->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
+            return ApiResponse::error($exception->getMessage());
         } catch (\Throwable $exception) {
             LoggerService::toFile(
                 fileName: 'auth/logout',
                 message: $exception->getMessage(),
             );
 
-            return $this->json([
-                'is_success' => false,
-                'error' => 'Что-то пошло не так',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponse::error(
+                error: 'Что-то пошло не так',
+                status: Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
     }
 }

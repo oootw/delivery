@@ -1,0 +1,75 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Метрики{% endblock %}
+
+{% block main %}
+    {% set maxRequests = 1 %}
+    {% for point in metrics.requests %}
+        {% set maxRequests = max(maxRequests, point.requests) %}
+    {% endfor %}
+
+    <style>
+        .metric-cards { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        .metric-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; min-width: 150px; }
+        .metric-card .value { font-size: 28px; font-weight: 700; }
+        .metric-card .label { color: #6b7280; font-size: 13px; margin-top: 4px; }
+        .metric-grid { display: flex; flex-wrap: wrap; gap: 24px; }
+        .metric-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 280px; }
+        .metric-panel h3 { margin: 0 0 12px; font-size: 15px; }
+        .bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 3px; }
+        .bar-row .t { width: 42px; color: #6b7280; }
+        .bar-row .b { height: 12px; background: #2563eb; border-radius: 3px; }
+        .bar-row .e { height: 12px; background: #dc2626; border-radius: 3px; }
+        .kv { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f1f1; }
+    </style>
+
+    <div class="metric-cards">
+        <div class="metric-card"><div class="value">{{ metrics.orders.active }}</div><div class="label">Активные заказы</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.orders.today }}</div><div class="label">Заказов сегодня</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.queue.pending }}</div><div class="label">В очереди Messenger</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.queue.failed }}</div><div class="label">Проваленных задач</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.db_ping_ms }} мс</div><div class="label">Отклик БД</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.totals.users }}</div><div class="label">Пользователей</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.totals.workspaces }}</div><div class="label">Воркспейсов</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.totals.venues }}</div><div class="label">Точек</div></div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric-panel" style="flex-basis: 100%;">
+            <h3>Нагрузка за последний час (запросов в минуту)</h3>
+            {% if metrics.requests is empty %}
+                <p style="color:#6b7280;">Пока нет данных — метрики начнут накапливаться с первых запросов.</p>
+            {% else %}
+                {% for point in metrics.requests %}
+                    <div class="bar-row">
+                        <span class="t">{{ point.minute }}</span>
+                        <div class="b" style="width: {{ (point.requests / maxRequests * 100)|round }}%;"></div>
+                        <span>{{ point.requests }}</span>
+                        {% if point.errors > 0 %}
+                            <div class="e" style="width: {{ (point.errors / maxRequests * 100)|round }}%;"></div>
+                            <span style="color:#dc2626;">{{ point.errors }} ош.</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="metric-panel">
+            <h3>Заказы по статусам</h3>
+            {% for status, total in metrics.orders.by_status %}
+                <div class="kv"><span>{{ status }}</span><strong>{{ total }}</strong></div>
+            {% else %}
+                <p style="color:#6b7280;">Нет заказов.</p>
+            {% endfor %}
+        </div>
+
+        <div class="metric-panel">
+            <h3>Подписки по статусам</h3>
+            {% for status, total in metrics.subscriptions.by_status %}
+                <div class="kv"><span>{{ status }}</span><strong>{{ total }}</strong></div>
+            {% else %}
+                <p style="color:#6b7280;">Нет подписок.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
