@@ -17,3 +17,7 @@ authorize_controllers:
     resource: ../src/Http/Action/Authorize/
     type: attribute
     prefix: /api/v1/auth
+
+admin_controllers:
+    resource: ../src/Http/Admin/
+    type: attribute

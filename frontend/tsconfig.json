@@ -1,0 +1,39 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/assets/*": [
+        "./assets/*"
+      ],
+      "@/shared/*": [
+        "./src/shared/*"
+      ],
+      "@/app/*": [
+        "./src/app/*"
+      ],
+      "@/features/*": [
+        "./src/features/*"
+      ],
+      "@/entities/*": [
+        "./src/entities/*"
+      ],
+      "@/pages/*": [
+        "./src/pages/*"
+      ],
+      "@/widgets/*": [
+        "./src/widgets/*"
+      ],
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "svg.d.ts"
+  ]
+}

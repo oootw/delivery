@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Admin;
 
-use App\Infrastructure\Doctrine\Domain\Audit\AuditRecord;
-use App\Infrastructure\Doctrine\Domain\Order\Order;
-use App\Infrastructure\Doctrine\Domain\PosIntegration\PosConnection;
-use App\Infrastructure\Doctrine\Domain\Subscription\Subscription;
-use App\Infrastructure\Doctrine\Domain\Users\User;
-use App\Infrastructure\Doctrine\Domain\Venue\Venue;
-use App\Infrastructure\Doctrine\Domain\Workspace\Workspace;
 use App\Infrastructure\Metrics\MetricsReader;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
@@ -49,19 +42,19 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Метрики', 'fa fa-chart-line');
 
         yield MenuItem::section('Продажи');
-        yield MenuItem::linkToCrud('Заказы', 'fa fa-receipt', Order::class);
-        yield MenuItem::linkToCrud('Подписки', 'fa fa-credit-card', Subscription::class);
+        yield MenuItem::linkTo(OrderCrudController::class, 'Заказы', 'fa fa-receipt');
+        yield MenuItem::linkTo(SubscriptionCrudController::class, 'Подписки', 'fa fa-credit-card');
 
         yield MenuItem::section('Клиенты и точки');
-        yield MenuItem::linkToCrud('Пользователи', 'fa fa-users', User::class);
-        yield MenuItem::linkToCrud('Воркспейсы', 'fa fa-store', Workspace::class);
-        yield MenuItem::linkToCrud('Точки', 'fa fa-location-dot', Venue::class);
-        yield MenuItem::linkToCrud('POS-подключения', 'fa fa-plug', PosConnection::class);
+        yield MenuItem::linkTo(UserCrudController::class, 'Пользователи', 'fa fa-users');
+        yield MenuItem::linkTo(WorkspaceCrudController::class, 'Воркспейсы', 'fa fa-store');
+        yield MenuItem::linkTo(VenueCrudController::class, 'Точки', 'fa fa-location-dot');
+        yield MenuItem::linkTo(PosConnectionCrudController::class, 'POS-подключения', 'fa fa-plug');
 
         yield MenuItem::section('Аудит');
-        yield MenuItem::linkToCrud('История изменений', 'fa fa-clock-rotate-left', AuditRecord::class);
+        yield MenuItem::linkTo(AuditRecordCrudController::class, 'История изменений', 'fa fa-clock-rotate-left');
 
         yield MenuItem::section();
-        yield MenuItem::linkToRoute('Выйти', 'fa fa-arrow-right-from-bracket', 'admin_logout');
+        yield MenuItem::linkToLogout('Выйти', 'fa fa-arrow-right-from-bracket');
     }
 }
