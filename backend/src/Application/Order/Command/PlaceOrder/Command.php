@@ -18,5 +18,7 @@ class Command
         public readonly string $contactPhone,
         public readonly ?string $deliveryAddress,
         public readonly ?string $comment,
+        public readonly ?string $promocode = null,
+        public readonly ?int $pointsToSpend = null,
     ) {}
 }

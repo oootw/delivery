@@ -17,5 +17,6 @@ class Command
         public readonly bool $supportsDelivery,
         public readonly bool $supportsPickup,
         public readonly ?int $deliveryRadiusMeters,
+        public readonly ?string $timezone = null,
     ) {}
 }

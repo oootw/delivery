@@ -53,6 +53,7 @@ class UpdateVenueAction extends AbstractController
                     supportsDelivery: $body['supports_delivery'] ?? true,
                     supportsPickup: $body['supports_pickup'] ?? true,
                     deliveryRadiusMeters: $body['delivery_radius_meters'] ?? null,
+                    timezone: $body['timezone'] ?? null,
                 ),
             );
 

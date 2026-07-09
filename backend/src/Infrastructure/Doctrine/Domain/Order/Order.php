@@ -39,6 +39,22 @@ class Order
     private array $items = [];
 
     #[ORM\Column]
+    private int $subtotalKopecks = 0;
+
+    #[ORM\Column]
+    private int $discountKopecks = 0;
+
+    /** @var array<int, array<string, mixed>> */
+    #[ORM\Column(type: 'json')]
+    private array $appliedDiscounts = [];
+
+    #[ORM\Column]
+    private int $pointsSpent = 0;
+
+    #[ORM\Column]
+    private int $pointsEarned = 0;
+
+    #[ORM\Column]
     private int $totalKopecks;
 
     #[ORM\Column(length: 255)]
@@ -137,6 +153,58 @@ class Order
     public function setItems(array $items): void
     {
         $this->items = $items;
+    }
+
+    public function getSubtotalKopecks(): int
+    {
+        return $this->subtotalKopecks;
+    }
+
+    public function setSubtotalKopecks(int $subtotalKopecks): void
+    {
+        $this->subtotalKopecks = $subtotalKopecks;
+    }
+
+    public function getDiscountKopecks(): int
+    {
+        return $this->discountKopecks;
+    }
+
+    public function setDiscountKopecks(int $discountKopecks): void
+    {
+        $this->discountKopecks = $discountKopecks;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function getAppliedDiscounts(): array
+    {
+        return $this->appliedDiscounts;
+    }
+
+    /** @param array<int, array<string, mixed>> $appliedDiscounts */
+    public function setAppliedDiscounts(array $appliedDiscounts): void
+    {
+        $this->appliedDiscounts = $appliedDiscounts;
+    }
+
+    public function getPointsSpent(): int
+    {
+        return $this->pointsSpent;
+    }
+
+    public function setPointsSpent(int $pointsSpent): void
+    {
+        $this->pointsSpent = $pointsSpent;
+    }
+
+    public function getPointsEarned(): int
+    {
+        return $this->pointsEarned;
+    }
+
+    public function setPointsEarned(int $pointsEarned): void
+    {
+        $this->pointsEarned = $pointsEarned;
     }
 
     public function getTotalKopecks(): int

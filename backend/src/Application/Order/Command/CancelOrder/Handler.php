@@ -7,7 +7,9 @@ namespace App\Application\Order\Command\CancelOrder;
 use App\Application\Order\Entity\Order\OrderStatusEnum;
 use App\Application\Order\Entity\Order\OrderStatusSourceEnum;
 use App\Application\Order\Entity\Order\OrderRepositoryInterface;
+use App\Application\Order\Pricing\OrderPricingInterface;
 use App\Application\Order\Realtime\OrderRealtimeNotifierInterface;
+use App\Application\Order\Rewards\OrderRewardsInterface;
 use App\Application\Order\WaitTime\WaitTimeRecalculatorInterface;
 
 /**
@@ -23,6 +25,8 @@ class Handler
         private readonly OrderRepositoryInterface $orders,
         private readonly OrderRealtimeNotifierInterface $realtimeNotifier,
         private readonly WaitTimeRecalculatorInterface $waitTimeRecalculator,
+        private readonly OrderPricingInterface $orderPricing,
+        private readonly OrderRewardsInterface $orderRewards,
     ) {}
 
     public function handle(Command $command): void
@@ -44,6 +48,12 @@ class Handler
         $order->cancel(OrderStatusSourceEnum::Customer);
 
         $this->orders->save($order);
+
+        // Заказ отменён — возвращаем применения акций (освобождаем лимиты).
+        $this->orderPricing->revertApplied($order->id);
+
+        // ...и возвращаем баллы (резерв или списанное).
+        $this->orderRewards->releaseOnCancel($order->id);
 
         $this->realtimeNotifier->publishStatus($order);
 

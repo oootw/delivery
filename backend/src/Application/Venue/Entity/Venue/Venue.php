@@ -22,6 +22,7 @@ class Venue
         public bool $supportsPickup,
         public ?int $deliveryRadiusMeters,
         public WorkingHours $workingHours,
+        public string $timezone,
         public bool $isActive,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
@@ -38,6 +39,7 @@ class Venue
         bool $supportsPickup,
         ?int $deliveryRadiusMeters,
         WorkingHours $workingHours,
+        string $timezone,
     ): self {
         $now = new \DateTimeImmutable();
 
@@ -53,6 +55,7 @@ class Venue
             supportsPickup: $supportsPickup,
             deliveryRadiusMeters: $deliveryRadiusMeters,
             workingHours: $workingHours,
+            timezone: self::normalizeTimezone($timezone),
             isActive: true,
             createdAt: $now,
             updatedAt: $now,
@@ -68,6 +71,7 @@ class Venue
         bool $supportsDelivery,
         bool $supportsPickup,
         ?int $deliveryRadiusMeters,
+        string $timezone,
     ): void {
         $this->name = $name;
         $this->address = $address;
@@ -77,7 +81,23 @@ class Venue
         $this->supportsDelivery = $supportsDelivery;
         $this->supportsPickup = $supportsPickup;
         $this->deliveryRadiusMeters = $deliveryRadiusMeters;
+        $this->timezone = self::normalizeTimezone($timezone);
         $this->touch();
+    }
+
+    private static function normalizeTimezone(string $timezone): string
+    {
+        $timezone = trim($timezone);
+
+        if ($timezone === '') {
+            throw new \DomainException('Укажите таймзону точки');
+        }
+
+        if (!in_array($timezone, \DateTimeZone::listIdentifiers(), true)) {
+            throw new \DomainException('Неизвестная таймзона точки: ' . $timezone);
+        }
+
+        return $timezone;
     }
 
     public function setWorkingHours(WorkingHours $workingHours): void

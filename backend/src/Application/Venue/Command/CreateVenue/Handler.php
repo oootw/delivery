@@ -37,6 +37,7 @@ class Handler
             supportsPickup: $command->supportsPickup,
             deliveryRadiusMeters: $command->deliveryRadiusMeters,
             workingHours: $workingHours,
+            timezone: $command->timezone ?? 'Europe/Moscow',
         );
 
         $venueId = $this->venues->save($venue);

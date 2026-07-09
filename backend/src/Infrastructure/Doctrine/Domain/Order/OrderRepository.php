@@ -49,6 +49,11 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             static fn(OrderItem $item): array => $item->toArray(),
             $order->items,
         ));
+        $record->setSubtotalKopecks($order->subtotalKopecks);
+        $record->setDiscountKopecks($order->discountKopecks);
+        $record->setAppliedDiscounts($order->appliedDiscounts);
+        $record->setPointsSpent($order->pointsSpent);
+        $record->setPointsEarned($order->pointsEarned);
         $record->setTotalKopecks($order->totalKopecks);
         $record->setContactName($order->contactName);
         $record->setContactPhone($order->contactPhone);
@@ -142,6 +147,24 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
         return array_map(static fn(array $row): int => (int) $row['venueId'], $rows);
     }
 
+    public function hasPaidOrBeyondByCustomer(int $workspaceId, int $customerId): bool
+    {
+        $statuses = [...self::IN_PROGRESS_STATUSES, OrderStatusEnum::Completed];
+
+        $count = (int) $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->where('o.workspaceId = :workspaceId')
+            ->andWhere('o.customerId = :customerId')
+            ->andWhere('o.status IN (:statuses)')
+            ->setParameter('workspaceId', $workspaceId)
+            ->setParameter('customerId', $customerId)
+            ->setParameter('statuses', $statuses)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
     private function toEntity(Order $record): OrderEntity
     {
         return new OrderEntity(
@@ -155,6 +178,11 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
                 static fn(array $item): OrderItem => OrderItem::fromArray($item),
                 $record->getItems(),
             ),
+            subtotalKopecks: $record->getSubtotalKopecks(),
+            discountKopecks: $record->getDiscountKopecks(),
+            appliedDiscounts: $record->getAppliedDiscounts(),
+            pointsSpent: $record->getPointsSpent(),
+            pointsEarned: $record->getPointsEarned(),
             totalKopecks: $record->getTotalKopecks(),
             contactName: $record->getContactName(),
             contactPhone: $record->getContactPhone(),

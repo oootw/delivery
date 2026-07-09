@@ -36,6 +36,7 @@ class Handler
             supportsDelivery: $command->supportsDelivery,
             supportsPickup: $command->supportsPickup,
             deliveryRadiusMeters: $command->deliveryRadiusMeters,
+            timezone: $command->timezone ?? $venue->timezone,
         );
 
         $this->venues->save($venue);

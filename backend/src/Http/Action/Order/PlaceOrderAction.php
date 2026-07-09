@@ -54,6 +54,8 @@ class PlaceOrderAction extends AbstractController
                     contactPhone: $contactPhone,
                     deliveryAddress: $body['delivery_address'] ?? null,
                     comment: $body['comment'] ?? null,
+                    promocode: $body['promocode'] ?? null,
+                    pointsToSpend: $body['points_to_spend'] ?? null,
                 ),
             );
 

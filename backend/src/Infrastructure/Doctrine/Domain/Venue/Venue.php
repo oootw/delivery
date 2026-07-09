@@ -49,6 +49,9 @@ class Venue
     #[ORM\Column(type: Types::JSON)]
     private array $workingHours = [];
 
+    #[ORM\Column(length: 64)]
+    private string $timezone = 'Europe/Moscow';
+
     #[ORM\Column]
     private bool $isActive;
 
@@ -163,6 +166,16 @@ class Venue
     public function setWorkingHours(array $workingHours): void
     {
         $this->workingHours = $workingHours;
+    }
+
+    public function getTimezone(): string
+    {
+        return $this->timezone;
+    }
+
+    public function setTimezone(string $timezone): void
+    {
+        $this->timezone = $timezone;
     }
 
     public function isActive(): bool

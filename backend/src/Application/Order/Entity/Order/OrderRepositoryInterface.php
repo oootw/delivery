@@ -46,4 +46,10 @@ interface OrderRepositoryInterface
      * @return int[]
      */
     public function findVenueIdsInProgress(): array;
+
+    /**
+     * Есть ли у гостя в этом воркспейсе хотя бы один оплаченный или активный заказ
+     * (статусы paid и дальше) — для условия «только первый заказ».
+     */
+    public function hasPaidOrBeyondByCustomer(int $workspaceId, int $customerId): bool;
 }

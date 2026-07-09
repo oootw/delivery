@@ -18,6 +18,7 @@ class Order
 {
     /**
      * @param OrderItem[] $items
+     * @param list<array{promotion_id: int, name: string, discount_kopecks: int}> $appliedDiscounts
      * @param list<array{status: string, source: string, at: string}> $history
      */
     public function __construct(
@@ -28,6 +29,11 @@ class Order
         public OrderTypeEnum $type,
         public OrderStatusEnum $status,
         public array $items,
+        public int $subtotalKopecks,
+        public int $discountKopecks,
+        public array $appliedDiscounts,
+        public int $pointsSpent,
+        public int $pointsEarned,
         public int $totalKopecks,
         public string $contactName,
         public string $contactPhone,
@@ -43,6 +49,7 @@ class Order
 
     /**
      * @param OrderItem[] $items
+     * @param list<array{promotion_id: int, name: string, discount_kopecks: int}> $appliedDiscounts
      */
     public static function buildNew(
         int $workspaceId,
@@ -50,7 +57,11 @@ class Order
         int $customerId,
         OrderTypeEnum $type,
         array $items,
-        int $totalKopecks,
+        int $subtotalKopecks,
+        int $discountKopecks,
+        array $appliedDiscounts,
+        int $pointsSpent,
+        int $pointsDiscountKopecks,
         string $contactName,
         string $contactPhone,
         ?string $deliveryAddress,
@@ -67,7 +78,12 @@ class Order
             type: $type,
             status: OrderStatusEnum::Created,
             items: $items,
-            totalKopecks: $totalKopecks,
+            subtotalKopecks: $subtotalKopecks,
+            discountKopecks: $discountKopecks,
+            appliedDiscounts: $appliedDiscounts,
+            pointsSpent: $pointsSpent,
+            pointsEarned: 0,
+            totalKopecks: max(0, $subtotalKopecks - $discountKopecks - $pointsDiscountKopecks),
             contactName: $contactName,
             contactPhone: $contactPhone,
             deliveryAddress: $deliveryAddress,
@@ -115,6 +131,13 @@ class Order
     public function applyWaitEstimate(int $minutes): void
     {
         $this->estimatedWaitMinutes = $minutes;
+        $this->touch();
+    }
+
+    /** Зафиксировать начисленные за заказ баллы (при завершении заказа). */
+    public function recordEarnedPoints(int $points): void
+    {
+        $this->pointsEarned = $points;
         $this->touch();
     }
 

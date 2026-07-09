@@ -40,6 +40,7 @@ class VenueRepository extends ServiceEntityRepository implements VenueRepository
         $record->setSupportsPickup($venue->supportsPickup);
         $record->setDeliveryRadiusMeters($venue->deliveryRadiusMeters);
         $record->setWorkingHours($venue->workingHours->toArray());
+        $record->setTimezone($venue->timezone);
         $record->setIsActive($venue->isActive);
         $record->setCreatedAt($venue->createdAt);
         $record->setUpdatedAt($venue->updatedAt);
@@ -84,6 +85,7 @@ class VenueRepository extends ServiceEntityRepository implements VenueRepository
             supportsPickup: $record->isSupportsPickup(),
             deliveryRadiusMeters: $record->getDeliveryRadiusMeters(),
             workingHours: WorkingHours::fromArray($record->getWorkingHours()),
+            timezone: $record->getTimezone(),
             isActive: $record->isActive(),
             createdAt: $record->getCreatedAt(),
             updatedAt: $record->getUpdatedAt(),

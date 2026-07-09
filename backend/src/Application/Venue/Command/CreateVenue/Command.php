@@ -19,5 +19,6 @@ class Command
         public readonly ?int $deliveryRadiusMeters,
         /** @var array<int, array{weekday?: mixed, opens_at?: mixed, closes_at?: mixed}> */
         public readonly array $workingHours,
+        public readonly ?string $timezone = null,
     ) {}
 }

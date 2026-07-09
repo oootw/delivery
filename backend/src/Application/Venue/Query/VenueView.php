@@ -24,6 +24,7 @@ final class VenueView
         public readonly ?int $deliveryRadiusMeters,
         /** @var array<int, array{weekday: int, opens_at: string, closes_at: string}> */
         public readonly array $workingHours,
+        public readonly string $timezone,
         public readonly bool $isActive,
     ) {}
 
@@ -41,6 +42,7 @@ final class VenueView
             supportsPickup: $venue->supportsPickup,
             deliveryRadiusMeters: $venue->deliveryRadiusMeters,
             workingHours: $venue->workingHours->toArray(),
+            timezone: $venue->timezone,
             isActive: $venue->isActive,
         );
     }
@@ -62,6 +64,7 @@ final class VenueView
             'supports_pickup' => $this->supportsPickup,
             'delivery_radius_meters' => $this->deliveryRadiusMeters,
             'working_hours' => $this->workingHours,
+            'timezone' => $this->timezone,
             'is_active' => $this->isActive,
         ];
     }

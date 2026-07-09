@@ -50,6 +50,7 @@ class CreateVenueAction extends AbstractController
                     supportsPickup: $body['supports_pickup'] ?? true,
                     deliveryRadiusMeters: $body['delivery_radius_meters'] ?? null,
                     workingHours: $body['working_hours'] ?? [],
+                    timezone: $body['timezone'] ?? null,
                 ),
             );
 

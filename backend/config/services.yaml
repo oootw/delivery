@@ -75,6 +75,10 @@ services:
 
     App\Application\Order\WaitTime\WaitTimeRecalculatorInterface: '@App\Application\WaitTime\Service\WaitTimeRecalculator'
 
+    App\Application\Order\Pricing\OrderPricingInterface: '@App\Application\Promotion\Service\PromotionPricing'
+
+    App\Application\Order\Rewards\OrderRewardsInterface: '@App\Application\Loyalty\Service\OrderRewards'
+
     App\Shared\Service\Crypto\SecretCipher:
         arguments:
             $base64Key: '%pos.secret_key%'

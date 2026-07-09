@@ -6,6 +6,7 @@ namespace App\Application\Order\Command\RecordOrderPayment;
 
 use App\Application\Order\Entity\Order\OrderRepositoryInterface;
 use App\Application\Order\Realtime\OrderRealtimeNotifierInterface;
+use App\Application\Order\Rewards\OrderRewardsInterface;
 use App\Application\Order\WaitTime\WaitTimeRecalculatorInterface;
 
 /**
@@ -18,6 +19,7 @@ class Handler
         private readonly OrderRepositoryInterface $orders,
         private readonly OrderRealtimeNotifierInterface $realtimeNotifier,
         private readonly WaitTimeRecalculatorInterface $waitTimeRecalculator,
+        private readonly OrderRewardsInterface $orderRewards,
     ) {}
 
     public function handle(Command $command): void
@@ -38,6 +40,9 @@ class Handler
         );
 
         $this->orders->save($order);
+
+        // Оплата прошла — списываем зарезервированные баллы.
+        $this->orderRewards->finalizeOnPaid($order->id);
 
         $this->realtimeNotifier->publishStatus($order);
 

@@ -13,6 +13,11 @@ use App\Application\Order\Entity\Order\OrderItem;
 use App\Application\Order\Entity\Order\OrderItemModifier;
 use App\Application\Order\Entity\Order\OrderRepositoryInterface;
 use App\Application\Order\Entity\Order\OrderTypeEnum;
+use App\Application\Order\Pricing\OrderPricingInterface;
+use App\Application\Order\Pricing\OrderPricingRequest;
+use App\Application\Order\Pricing\PricingLine;
+use App\Application\Order\Rewards\OrderRewardsInterface;
+use App\Application\Order\Rewards\RedeemQuoteRequest;
 use App\Application\Venue\Entity\Venue\VenueRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -30,6 +35,8 @@ class Handler
         private readonly MenuItemRepositoryInterface $menuItems,
         private readonly ModifierRepositoryInterface $modifiers,
         private readonly OrderRepositoryInterface $orders,
+        private readonly OrderPricingInterface $orderPricing,
+        private readonly OrderRewardsInterface $orderRewards,
     ) {}
 
     public function handle(Command $command): PlacedOrderDTO
@@ -76,13 +83,47 @@ class Handler
         $availableModifiers = $this->indexModifiersByExternalId($command->venueId);
 
         $orderItems = [];
-        $total = 0;
+        $pricingLines = [];
+        $subtotal = 0;
 
         foreach ($command->lines as $line) {
             $orderItem = $this->buildOrderItem($line, $availableItems, $availableModifiers);
             $orderItems[] = $orderItem;
-            $total += $orderItem->lineTotalKopecks();
+            $subtotal += $orderItem->lineTotalKopecks();
+
+            $pricingLines[] = new PricingLine(
+                menuItemExternalId: $orderItem->menuItemExternalId,
+                categoryExternalId: $availableItems[$line->menuItemExternalId]->categoryExternalId,
+                lineTotalKopecks: $orderItem->lineTotalKopecks(),
+            );
         }
+
+        $pricingRequest = new OrderPricingRequest(
+            workspaceId: $venue->workspaceId,
+            venueId: $venue->id,
+            customerId: $command->customerId,
+            orderType: $type->value,
+            subtotalKopecks: $subtotal,
+            promocode: $command->promocode,
+            now: new \DateTimeImmutable(),
+            timezone: $venue->timezone,
+            isFirstOrder: !$this->orders->hasPaidOrBeyondByCustomer($venue->workspaceId, $command->customerId),
+            lines: $pricingLines,
+        );
+
+        $pricing = $this->orderPricing->priceOrder($pricingRequest);
+        $payableAfterPromo = max(0, $subtotal - $pricing->discountKopecks);
+
+        // Списание баллов идёт поверх скидок, от суммы к оплате после промо.
+        $redeemRequest = new RedeemQuoteRequest(
+            workspaceId: $venue->workspaceId,
+            customerId: $command->customerId,
+            pointsToSpend: $command->pointsToSpend ?? 0,
+            maxBaseKopecks: $payableAfterPromo,
+        );
+
+        $redeem = $this->orderRewards->quoteRedeem($redeemRequest);
+        $payable = max(0, $payableAfterPromo - $redeem->pointsDiscountKopecks);
 
         $order = Order::buildNew(
             workspaceId: $venue->workspaceId,
@@ -90,7 +131,11 @@ class Handler
             customerId: $command->customerId,
             type: $type,
             items: $orderItems,
-            totalKopecks: $total,
+            subtotalKopecks: $subtotal,
+            discountKopecks: $pricing->discountKopecks,
+            appliedDiscounts: $pricing->toArray(),
+            pointsSpent: $redeem->pointsSpent,
+            pointsDiscountKopecks: $redeem->pointsDiscountKopecks,
             contactName: $command->contactName,
             contactPhone: $command->contactPhone,
             deliveryAddress: $deliveryAddress,
@@ -100,12 +145,18 @@ class Handler
 
         $orderId = $this->orders->save($order);
 
+        // Скидка применилась — фиксируем в леджере и счётчиках лимитов.
+        $this->orderPricing->recordApplied($orderId, $pricingRequest, $pricing);
+
+        // Резервируем списываемые баллы под заказ (спишутся при оплате).
+        $this->orderRewards->reserveOnPlace($orderId, $redeemRequest, $redeem);
+
         return new PlacedOrderDTO(
             orderId: $orderId,
             invoiceId: $order->invoiceId,
             accountId: $command->customerId,
-            totalKopecks: $total,
-            amountRubles: number_format($total / 100, 2, '.', ''),
+            totalKopecks: $payable,
+            amountRubles: number_format($payable / 100, 2, '.', ''),
             currency: self::CURRENCY,
         );
     }
