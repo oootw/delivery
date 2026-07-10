@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Console;
 
+use App\Application\Authorize\Entity\User\UserRepositoryInterface;
 use App\Infrastructure\Doctrine\Domain\Users\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -27,6 +28,7 @@ final class GrantAdminCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly UserRepositoryInterface $users,
     ) {
         parent::__construct();
     }
@@ -46,9 +48,9 @@ final class GrantAdminCommand extends Command
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
         if ($user === null) {
-            $io->error(sprintf('Пользователь с телефоном %s не найден', $phone));
-
-            return Command::FAILURE;
+            $this->users->create($phone);
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
+            $io->note(sprintf('Создан новый пользователь с телефоном %s', $phone));
         }
 
         $user->setIsAdmin(true);
