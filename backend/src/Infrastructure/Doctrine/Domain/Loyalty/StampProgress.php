@@ -6,10 +6,10 @@ namespace App\Infrastructure\Doctrine\Domain\Loyalty;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: LoyaltyAccountRepository::class)]
-#[ORM\Table(name: 'loyalty_account')]
-#[ORM\UniqueConstraint(name: 'uniq_loyalty_account_customer', columns: ['workspace_id', 'customer_id'])]
-class LoyaltyAccount
+#[ORM\Entity(repositoryClass: StampProgressRepository::class)]
+#[ORM\Table(name: 'stamp_progress')]
+#[ORM\UniqueConstraint(name: 'uniq_stamp_progress_customer', columns: ['workspace_id', 'customer_id'])]
+class StampProgress
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -23,16 +23,7 @@ class LoyaltyAccount
     private int $customerId;
 
     #[ORM\Column]
-    private int $pointsBalance = 0;
-
-    #[ORM\Column]
-    private int $reservedPoints = 0;
-
-    #[ORM\Column]
-    private int $lifetimeSpentKopecks = 0;
-
-    #[ORM\Column(nullable: true)]
-    private ?int $currentTierId = null;
+    private int $currentStamps = 0;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -65,44 +56,14 @@ class LoyaltyAccount
         $this->customerId = $customerId;
     }
 
-    public function getPointsBalance(): int
+    public function getCurrentStamps(): int
     {
-        return $this->pointsBalance;
+        return $this->currentStamps;
     }
 
-    public function setPointsBalance(int $pointsBalance): void
+    public function setCurrentStamps(int $currentStamps): void
     {
-        $this->pointsBalance = $pointsBalance;
-    }
-
-    public function getReservedPoints(): int
-    {
-        return $this->reservedPoints;
-    }
-
-    public function setReservedPoints(int $reservedPoints): void
-    {
-        $this->reservedPoints = $reservedPoints;
-    }
-
-    public function getLifetimeSpentKopecks(): int
-    {
-        return $this->lifetimeSpentKopecks;
-    }
-
-    public function setLifetimeSpentKopecks(int $lifetimeSpentKopecks): void
-    {
-        $this->lifetimeSpentKopecks = $lifetimeSpentKopecks;
-    }
-
-    public function getCurrentTierId(): ?int
-    {
-        return $this->currentTierId;
-    }
-
-    public function setCurrentTierId(?int $currentTierId): void
-    {
-        $this->currentTierId = $currentTierId;
+        $this->currentStamps = $currentStamps;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

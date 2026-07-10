@@ -17,6 +17,8 @@ class LoyaltyAccount
         public int $customerId,
         public int $pointsBalance,
         public int $reservedPoints,
+        public int $lifetimeSpentKopecks,
+        public ?int $currentTierId,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
     ) {}
@@ -31,6 +33,8 @@ class LoyaltyAccount
             customerId: $customerId,
             pointsBalance: 0,
             reservedPoints: 0,
+            lifetimeSpentKopecks: 0,
+            currentTierId: null,
             createdAt: $now,
             updatedAt: $now,
         );
@@ -87,6 +91,34 @@ class LoyaltyAccount
         }
 
         $this->pointsBalance += $points;
+        $this->touch();
+    }
+
+    /** Учесть оплаченный заказ в сумме трат за всё время (для расчёта уровня). */
+    public function recordSpend(int $netPaidKopecks): void
+    {
+        if ($netPaidKopecks <= 0) {
+            return;
+        }
+
+        $this->lifetimeSpentKopecks += $netPaidKopecks;
+        $this->touch();
+    }
+
+    /** Откат трат при отмене ранее завершённого заказа (уровень может понизиться). */
+    public function reduceSpend(int $netPaidKopecks): void
+    {
+        if ($netPaidKopecks <= 0) {
+            return;
+        }
+
+        $this->lifetimeSpentKopecks = max(0, $this->lifetimeSpentKopecks - $netPaidKopecks);
+        $this->touch();
+    }
+
+    public function setTier(?int $tierId): void
+    {
+        $this->currentTierId = $tierId;
         $this->touch();
     }
 

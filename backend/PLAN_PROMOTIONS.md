@@ -270,6 +270,9 @@ Command/Handler и/или Query/Fetcher → Action → `lint:container` → от
 >
 > **Осознанно отложено:** сгорание баллов (`pointsLifetimeDays` хранится, но крон-экспирации нет) — позже; конкурентность резерва — окно между quote и reserve не заблокировано (как и не-транзакционность промо, общий долг M7); `earnOnStatus` не вынесен в конфиг (зафиксирован completed); lifetime/tier — M9.4.
 
+- **2026-07-10 — M9.4 реализовано.** Уровни по lifetime spend (net paid). См. блок статуса в разделе 5 (M9.4). Пользователю прогнать миграцию `Version20260710120000`. Следующее — M9.5 (штампы).
+- **2026-07-10 — M9.5 реализовано.** Штампы (карта): штамп=любой завершённый заказ, награда=баллы, сброс=вычитать порог, одна программа на воркспейс. См. блок статуса в разделе 5 (M9.5). Пользователю прогнать миграцию `Version20260710130000`. Следующее — M9.6 (quote-предпросмотр + админка/метрики).
+
 ### M9.4 — Loyalty: уровни (tiers) по lifetime spend
 - `LoyaltyTier`, `TierResolver`, поле `lifetimeSpentKopecks`/`currentTierId` в `LoyaltyAccount`.
 - `AccrueOrderRewards` инкрементит lifetime и пересчитывает tier; tier даёт `permanentDiscount`
@@ -279,12 +282,67 @@ Command/Handler и/или Query/Fetcher → Action → `lint:container` → от
 - **Уточнить:** пороги уровней; что делать с уже накопленным lifetime при первом включении программы
   (считать с нуля vs backfill по истории заказов — по умолчанию с нуля).
 
+> **Статус: реализовано (2026-07-10).** Согласовано: lifetime spend копится **с нуля** (без backfill по истории);
+> постоянная скидка уровня **складывается поверх** промо/промокодов (виртуальная строка после промо, от остатка,
+> в пределах общего потолка MIN_PAYABLE=100 коп); база lifetime — **net paid = order.totalKopecks** (как и кэшбэк);
+> при отмене ранее завершённого заказа траты **вычитаются** и уровень пересчитывается вниз.
+>
+> Сущность `Application/Loyalty/Entity/Tier/LoyaltyTier` (name, thresholdKopecks, earnRateBonusBasisPoints,
+> permanentDiscountBasisPoints, sortOrder; валидация 0–100% в б.п.) + `LoyaltyTierRepositoryInterface`
+> (findByWorkspace по возрастанию порога, replaceAll — полная замена набора). Чистый `Service/TierResolver`
+> (resolve = высший tier с порогом ≤ lifetime; nextTier — для прогресса). `LoyaltyAccount` получил
+> `lifetimeSpentKopecks`/`currentTierId` + методы recordSpend/reduceSpend/setTier. `LoyaltyProgram::earnPointsFor`
+> принимает `tierBonusBasisPoints` (ставка = base+bonus, потолок 100%).
+>
+> **Интеграция.** Порт `OrderRewardsInterface` расширен `currentTierDiscount(workspaceId, customerId): TierDiscount`
+> (VO в `Order/Rewards`); `releaseOnCancel` получил `workspaceId/customerId/netPaidKopecks` (откат трат/уровня, guard
+> по existsEarnForOrder). `accrueOnCompleted` теперь копит lifetime, резолвит tier (setTier), начисляет кэшбэк с
+> прибавкой уровня. `OrderPricingRequest` получил `tierDiscountBasisPoints`/`tierName`; `PlaceOrder` берёт их из
+> `currentTierDiscount`. `PromotionPricing` добавляет скидку уровня поверх результата движка (виртуальная
+> AppliedDiscount с promotion_id=0, в леджер применений не пишется — guard в recordApplied). Три пути отмены
+> (CancelOrder/ChangeOrderStatus/SyncFromPos) передают новые аргументы в releaseOnCancel.
+>
+> Owner: `SetLoyaltyTiers` (замена набора, пороги уникальны) — PUT `/workspaces/{id}/loyalty/tiers`.
+> `GetLoyaltyAccount` отдаёт lifetime_spent_kopecks, current_tier, next_tier, kopecks_to_next_tier, tiers[].
+> Миграция `Version20260710120000` (таблица loyalty_tier + колонки lifetime_spent_kopecks/current_tier_id).
+> Проверено: `lint:container` OK, `doctrine:mapping:info`/`schema:validate` OK (5 сущностей loyalty), роут
+> `app_set_loyalty_tiers`, `php -l` OK. **Пользователю: прогнать миграцию `Version20260710120000`.**
+>
+> **Осознанно отложено:** откат трат/уровня при отмене завершённого заказа сейчас недостижим (статус completed
+> финальный) — код корректен на будущее (un-complete/возврат); backfill lifetime по истории — не делаем; кэшбэк при
+> откате завершённого заказа не отзывается (как и раньше при отмене оплаченного); currentTierId — кэш, тир для
+> расчёта/витрины всегда резолвится по lifetime (единый источник истины).
+
 ### M9.5 — Loyalty: штампы (stamp-card)
 - `StampProgram` (конфиг), `StampProgress`, продвижение в `AccrueOrderRewards`, выдача награды при `requiredCount`.
 - Owner: `SetStampProgram`. Guest: прогресс в `GetLoyaltyAccount`.
 - Миграция (`stamp_program`, `stamp_progress`).
 - **Уточнить:** что считается «штампом» (любой completed заказ / заказ выше минимальной суммы);
   вид награды (бесплатная позиция vs скидка vs баллы); сброс прогресса после награды.
+
+> **Статус: реализовано (2026-07-10).** Согласовано: штамп = **любой завершённый заказ** (без порога суммы);
+> награда = **баллы на кошелёк** (rewardPoints, леджер `StampReward`); сброс = **вычитать requiredCount**
+> (переполнение сверх порога остаётся на следующую карту); программа **одна на воркспейс** (без venueId).
+>
+> Домен `Application/Loyalty/Entity/Stamp`: `StampProgram` (isEnabled/requiredCount≥1/rewardPoints≥1, update+валидация)
+> + `StampProgress` (currentStamps, addStamp/redeemReward(requiredCount)) + два репозитория (findByWorkspace;
+> findByCustomer/getOrCreate). Enum `LoyaltyTransactionTypeEnum::StampReward`. Doctrine: `stamp_program`
+> (uniq workspace_id), `stamp_progress` (uniq workspace_id+customer_id). Миграция `Version20260710130000`.
+>
+> **Интеграция.** `OrderRewards.accrueOnCompleted` реструктурирован: идемпотентность по existsEarnForOrder гейтит
+> всё; **траты/уровень копятся независимо от программы кэшбэка** (раньше был ранний return при отсутствии
+> LoyaltyProgram — теперь tiers работают и без кэшбэка); кэшбэк — если программа есть; затем `advanceStamps`
+> (+1 штамп, while currentStamps≥requiredCount → списать порог и начислить rewardPoints, леджер StampReward с
+> корректным balanceAfter). За заказ добавляется 1 штамп → максимум 1 награда. Owner: `SetStampProgram`
+> PUT `/workspaces/{id}/loyalty/stamp-program`. `GetLoyaltyAccount` отдаёт блок `stamps`
+> (is_enabled/required_count/reward_points/current_stamps/stamps_to_reward).
+> Проверено: `lint:container` OK, `doctrine:mapping:info`/`schema:validate` OK, роут `app_set_stamp_program`,
+> `php -l` OK. **Пользователю: прогнать миграцию `Version20260710130000`.**
+>
+> **Осознанно отложено:** идемпотентность штампов держится на терминальности completed (нет отдельного
+> per-order маркера штампа) — как и вся accrue-логика; откат штампа при отмене завершённого заказа не делаем
+> (штампы копятся только вперёд, симметрично тому, что кэшбэк не отзывается); бесплатная позиция/скидочный
+> промокод как награда — не выбраны, при желании расширяемо через тип награды.
 
 ### M9.6 — Витрина гостю + админка + метрики
 - Предпросмотр цены до оформления: `POST /api/v1/venues/{venueId}/orders/quote` — принимает корзину +

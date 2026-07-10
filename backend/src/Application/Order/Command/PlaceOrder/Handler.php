@@ -98,6 +98,9 @@ class Handler
             );
         }
 
+        // Постоянная скидка уровня лояльности гостя — учитывается движком скидок.
+        $tierDiscount = $this->orderRewards->currentTierDiscount($venue->workspaceId, $command->customerId);
+
         $pricingRequest = new OrderPricingRequest(
             workspaceId: $venue->workspaceId,
             venueId: $venue->id,
@@ -109,6 +112,8 @@ class Handler
             timezone: $venue->timezone,
             isFirstOrder: !$this->orders->hasPaidOrBeyondByCustomer($venue->workspaceId, $command->customerId),
             lines: $pricingLines,
+            tierDiscountBasisPoints: $tierDiscount->basisPoints,
+            tierName: $tierDiscount->tierName,
         );
 
         $pricing = $this->orderPricing->priceOrder($pricingRequest);

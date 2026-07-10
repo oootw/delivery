@@ -75,14 +75,19 @@ class LoyaltyProgram
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    /** Начисляемые баллы за оплаченную сумму (округление вниз). */
-    public function earnPointsFor(int $netPaidKopecks): int
+    /**
+     * Начисляемые баллы за оплаченную сумму (округление вниз). Прибавка уровня
+     * (tierBonusBasisPoints) суммируется с базовым процентом кэшбэка, но итоговая
+     * ставка не превышает 100%.
+     */
+    public function earnPointsFor(int $netPaidKopecks, int $tierBonusBasisPoints = 0): int
     {
         if (!$this->isEnabled || $netPaidKopecks <= 0) {
             return 0;
         }
 
-        $cashbackKopecks = intdiv($netPaidKopecks * $this->earnRateBasisPoints, 10000);
+        $rate = min(10000, $this->earnRateBasisPoints + max(0, $tierBonusBasisPoints));
+        $cashbackKopecks = intdiv($netPaidKopecks * $rate, 10000);
 
         return intdiv($cashbackKopecks, $this->pointValueKopecks);
     }

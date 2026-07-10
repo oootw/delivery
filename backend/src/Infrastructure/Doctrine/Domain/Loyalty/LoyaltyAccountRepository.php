@@ -33,6 +33,8 @@ class LoyaltyAccountRepository extends ServiceEntityRepository implements Loyalt
         $record->setCustomerId($account->customerId);
         $record->setPointsBalance($account->pointsBalance);
         $record->setReservedPoints($account->reservedPoints);
+        $record->setLifetimeSpentKopecks($account->lifetimeSpentKopecks);
+        $record->setCurrentTierId($account->currentTierId);
         $record->setCreatedAt($account->createdAt);
         $record->setUpdatedAt($account->updatedAt);
 
@@ -73,6 +75,8 @@ class LoyaltyAccountRepository extends ServiceEntityRepository implements Loyalt
             customerId: $record->getCustomerId(),
             pointsBalance: $record->getPointsBalance(),
             reservedPoints: $record->getReservedPoints(),
+            lifetimeSpentKopecks: $record->getLifetimeSpentKopecks(),
+            currentTierId: $record->getCurrentTierId(),
             createdAt: $record->getCreatedAt(),
             updatedAt: $record->getUpdatedAt(),
         );

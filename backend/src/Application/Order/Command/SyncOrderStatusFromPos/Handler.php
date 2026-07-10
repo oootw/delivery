@@ -62,7 +62,12 @@ class Handler
 
         if ($newStatus === OrderStatusEnum::Canceled) {
             $this->orderPricing->revertApplied($order->id);
-            $this->orderRewards->releaseOnCancel($order->id);
+            $this->orderRewards->releaseOnCancel(
+                orderId: $order->id,
+                workspaceId: $order->workspaceId,
+                customerId: $order->customerId,
+                netPaidKopecks: $order->totalKopecks,
+            );
         }
 
         $this->orders->save($order);

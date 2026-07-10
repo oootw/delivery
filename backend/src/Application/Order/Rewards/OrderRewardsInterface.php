@@ -21,7 +21,9 @@ interface OrderRewardsInterface
 
     public function finalizeOnPaid(int $orderId): void;
 
-    public function releaseOnCancel(int $orderId): void;
+    public function releaseOnCancel(int $orderId, int $workspaceId, int $customerId, int $netPaidKopecks): void;
 
     public function accrueOnCompleted(int $orderId, int $workspaceId, int $customerId, int $netPaidKopecks): int;
+
+    public function currentTierDiscount(int $workspaceId, int $customerId): TierDiscount;
 }

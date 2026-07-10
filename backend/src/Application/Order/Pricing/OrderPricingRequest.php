@@ -24,5 +24,7 @@ final class OrderPricingRequest
         public readonly string $timezone,
         public readonly bool $isFirstOrder,
         public readonly array $lines,
+        public readonly int $tierDiscountBasisPoints = 0,
+        public readonly ?string $tierName = null,
     ) {}
 }

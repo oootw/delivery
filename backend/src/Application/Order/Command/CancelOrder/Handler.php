@@ -52,8 +52,13 @@ class Handler
         // Заказ отменён — возвращаем применения акций (освобождаем лимиты).
         $this->orderPricing->revertApplied($order->id);
 
-        // ...и возвращаем баллы (резерв или списанное).
-        $this->orderRewards->releaseOnCancel($order->id);
+        // ...и возвращаем баллы (резерв или списанное), откатываем траты уровня.
+        $this->orderRewards->releaseOnCancel(
+            orderId: $order->id,
+            workspaceId: $order->workspaceId,
+            customerId: $order->customerId,
+            netPaidKopecks: $order->totalKopecks,
+        );
 
         $this->realtimeNotifier->publishStatus($order);
 

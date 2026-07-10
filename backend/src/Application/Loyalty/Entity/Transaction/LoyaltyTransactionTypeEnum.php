@@ -21,4 +21,7 @@ enum LoyaltyTransactionTypeEnum: string
 
     /** Ручная корректировка баланса (поддержкой/владельцем). */
     case ManualAdjust = 'manual_adjust';
+
+    /** Баллы, выданные за заполненную карту штампов. */
+    case StampReward = 'stamp_reward';
 }

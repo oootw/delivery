@@ -23,6 +23,12 @@ use App\Application\Promotion\Entity\Promotion\PromotionRepositoryInterface;
  */
 class PromotionPricing implements OrderPricingInterface
 {
+    /** Итог к оплате не может опуститься ниже этого порога (см. PromotionEngine). */
+    private const MIN_PAYABLE_KOPECKS = 100;
+
+    /** Виртуальная скидка уровня не попадает в леджер применений (promotion_id ≤ 0). */
+    private const TIER_PROMOTION_ID = 0;
+
     public function __construct(
         private readonly PromotionRepositoryInterface $promotions,
         private readonly PromotionEngine $engine,
@@ -61,22 +67,56 @@ class PromotionPricing implements OrderPricingInterface
 
         $result = $this->engine->apply($candidates, $context);
 
-        return new OrderPricingResult(
-            discountKopecks: $result->totalDiscountKopecks,
-            appliedDiscounts: array_map(
-                static fn(AppliedPromotion $applied): AppliedDiscount => new AppliedDiscount(
-                    promotionId: $applied->promotionId,
-                    name: $applied->name,
-                    discountKopecks: $applied->discountKopecks,
-                ),
-                $result->applied,
+        $appliedDiscounts = array_map(
+            static fn(AppliedPromotion $applied): AppliedDiscount => new AppliedDiscount(
+                promotionId: $applied->promotionId,
+                name: $applied->name,
+                discountKopecks: $applied->discountKopecks,
             ),
+            $result->applied,
         );
+
+        // Постоянная скидка уровня складывается поверх акций (после промо, от остатка).
+        $totalDiscount = $result->totalDiscountKopecks;
+        $tierDiscount = $this->tierDiscountKopecks($request, $totalDiscount);
+
+        if ($tierDiscount > 0) {
+            $appliedDiscounts[] = new AppliedDiscount(
+                promotionId: self::TIER_PROMOTION_ID,
+                name: $request->tierName ?? 'Уровень лояльности',
+                discountKopecks: $tierDiscount,
+            );
+            $totalDiscount += $tierDiscount;
+        }
+
+        return new OrderPricingResult(
+            discountKopecks: $totalDiscount,
+            appliedDiscounts: $appliedDiscounts,
+        );
+    }
+
+    /** Скидка уровня от суммы после промо, ограниченная порогом минимального платежа. */
+    private function tierDiscountKopecks(OrderPricingRequest $request, int $promoDiscount): int
+    {
+        if ($request->tierDiscountBasisPoints <= 0) {
+            return 0;
+        }
+
+        $afterPromo = max(0, $request->subtotalKopecks - $promoDiscount);
+        $raw = intdiv($afterPromo * $request->tierDiscountBasisPoints, 10000);
+        $cap = max(0, $afterPromo - self::MIN_PAYABLE_KOPECKS);
+
+        return min($raw, $cap);
     }
 
     public function recordApplied(int $orderId, OrderPricingRequest $request, OrderPricingResult $result): void
     {
         foreach ($result->appliedDiscounts as $applied) {
+            // Виртуальная скидка уровня — не акция, в леджер применений не пишется.
+            if ($applied->promotionId <= self::TIER_PROMOTION_ID) {
+                continue;
+            }
+
             $this->promotions->saveRedemption(
                 PromotionRedemption::buildNew(
                     promotionId: $applied->promotionId,
