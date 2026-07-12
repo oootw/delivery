@@ -21,3 +21,11 @@ authorize_controllers:
 admin_controllers:
     resource: ../src/Http/Admin/
     type: attribute
+
+# Эндпоинты клиентских модулей (src/Custom/{slug}/Http/Action). Только классы с #[Route]
+# дают роуты; префикс /api/v1 — как у ядра. Экшены сами гейтят доступ (модуль активен + роль),
+# иначе 404.
+custom_controllers:
+    resource: ../src/Custom/
+    type: attribute
+    prefix: /api/v1

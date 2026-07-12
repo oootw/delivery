@@ -33,6 +33,15 @@ services:
     _instanceof:
         App\Application\PosIntegration\Gateway\PosMenuProviderInterface:
             tags: ['app.pos_menu_provider']
+        # каждый клиентский модуль кастомизации помечается тегом — их собирает CustomModuleRegistry
+        App\Application\Customization\Contract\CustomModuleInterface:
+            tags: ['app.custom_module']
+        # поставщики деклараций настроек воркспейса — их собирает SettingsCatalog
+        App\Application\Customization\Settings\SettingsProviderInterface:
+            tags: ['app.settings_provider']
+        # разделы админки от клиентских модулей — их собирает DashboardController
+        App\Http\Admin\CustomAdminMenuContributorInterface:
+            tags: ['app.custom_admin_menu']
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -129,3 +138,11 @@ services:
     App\Application\PosIntegration\Gateway\PosMenuProviderRegistry:
         arguments:
             $providers: !tagged_iterator app.pos_menu_provider
+
+    App\Application\Customization\Registry\CustomModuleRegistry:
+        arguments:
+            $modules: !tagged_iterator app.custom_module
+
+    App\Application\Customization\Settings\SettingsCatalog:
+        arguments:
+            $providers: !tagged_iterator app.settings_provider

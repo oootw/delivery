@@ -9,6 +9,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -19,8 +20,13 @@ use Symfony\Component\HttpFoundation\Response;
 #[AdminDashboard(routePath: '/admin', routeName: 'admin_dashboard')]
 class DashboardController extends AbstractDashboardController
 {
+    /**
+     * @param iterable<CustomAdminMenuContributorInterface> $customMenuContributors
+     */
     public function __construct(
         private readonly MetricsReader $metricsReader,
+        #[AutowireIterator('app.custom_admin_menu')]
+        private readonly iterable $customMenuContributors = [],
     ) {}
 
     public function index(): Response
@@ -60,6 +66,11 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Аудит');
         yield MenuItem::linkTo(AuditRecordCrudController::class, 'История изменений', 'fa fa-clock-rotate-left');
+
+        // Разделы от клиентских модулей (src/Custom/{slug}); ядро не знает их классов.
+        foreach ($this->customMenuContributors as $contributor) {
+            yield from $contributor->menuItems();
+        }
 
         yield MenuItem::section();
         yield MenuItem::linkToLogout('Выйти', 'fa fa-arrow-right-from-bracket');
