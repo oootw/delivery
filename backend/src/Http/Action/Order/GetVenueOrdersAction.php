@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Order;
 
-use App\Application\Order\Query\GetVenueOrders\Fetcher as GetVenueOrdersFetcher;
-use App\Application\Order\Query\GetVenueOrders\Query as GetVenueOrdersQuery;
+use App\Application\Order\Query\GetOrdersByVenueId\GetOrdersByVenueIdFetcher;
+use App\Application\Order\Query\GetOrdersByVenueId\GetOrdersByVenueIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetVenueOrdersAction extends AbstractController
 {
     public function __construct(
-        private readonly GetVenueOrdersFetcher $getVenueOrders,
+        private readonly GetOrdersByVenueIdFetcher $getVenueOrders,
     ) {}
 
     #[Route('/venues/{venueId}/orders', name: 'app_get_venue_orders', methods: ['GET'], requirements: ['venueId' => '\d+'])]
@@ -28,7 +28,7 @@ class GetVenueOrdersAction extends AbstractController
             $user = $this->getUser();
 
             $orders = $this->getVenueOrders->fetch(
-                new GetVenueOrdersQuery(
+                new GetOrdersByVenueIdQuery(
                     venueId: $venueId,
                     userId: $user->claims->userId,
                     status: $request->query->get('status'),

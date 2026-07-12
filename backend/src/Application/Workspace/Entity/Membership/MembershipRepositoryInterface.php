@@ -13,7 +13,7 @@ interface MembershipRepositoryInterface
     /**
      * @return Membership[]
      */
-    public function findByUser(int $userId): array;
+    public function findAllByUserId(int $userId): array;
 
     public function delete(int $membershipId): void;
 }

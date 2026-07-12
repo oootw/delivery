@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Loyalty;
 
-use App\Application\Loyalty\Command\SetLoyaltyTiers\Command as SetLoyaltyTiersCommand;
-use App\Application\Loyalty\Command\SetLoyaltyTiers\Handler as SetLoyaltyTiersHandler;
+use App\Application\Loyalty\Command\SetLoyaltyTiers\SetLoyaltyTiersCommand;
+use App\Application\Loyalty\Command\SetLoyaltyTiers\SetLoyaltyTiersHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

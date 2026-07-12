@@ -43,18 +43,33 @@ class LoyaltyTransactionRepository extends ServiceEntityRepository implements Lo
         $records = $this->findBy(['accountId' => $accountId], ['createdAt' => 'DESC', 'id' => 'DESC'], $limit);
 
         return array_map(
-            static fn(LoyaltyTransaction $record): LoyaltyTransactionEntity => new LoyaltyTransactionEntity(
-                id: $record->getId(),
-                accountId: $record->getAccountId(),
-                workspaceId: $record->getWorkspaceId(),
-                orderId: $record->getOrderId(),
-                type: $record->getType(),
-                points: $record->getPoints(),
-                balanceAfter: $record->getBalanceAfter(),
-                comment: $record->getComment(),
-                createdAt: $record->getCreatedAt(),
-            ),
+            fn(LoyaltyTransaction $record): LoyaltyTransactionEntity => $this->toEntity($record),
             $records,
+        );
+    }
+
+    public function findAllByAccountAsc(int $accountId): array
+    {
+        $records = $this->findBy(['accountId' => $accountId], ['createdAt' => 'ASC', 'id' => 'ASC']);
+
+        return array_map(
+            fn(LoyaltyTransaction $record): LoyaltyTransactionEntity => $this->toEntity($record),
+            $records,
+        );
+    }
+
+    private function toEntity(LoyaltyTransaction $record): LoyaltyTransactionEntity
+    {
+        return new LoyaltyTransactionEntity(
+            id: $record->getId(),
+            accountId: $record->getAccountId(),
+            workspaceId: $record->getWorkspaceId(),
+            orderId: $record->getOrderId(),
+            type: $record->getType(),
+            points: $record->getPoints(),
+            balanceAfter: $record->getBalanceAfter(),
+            comment: $record->getComment(),
+            createdAt: $record->getCreatedAt(),
         );
     }
 

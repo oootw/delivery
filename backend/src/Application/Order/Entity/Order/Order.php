@@ -101,6 +101,12 @@ class Order
         return $order;
     }
 
+    /** Заказ ещё ждёт оплаты (webhook по нему не обрабатывался). */
+    public function isAwaitingPayment(): bool
+    {
+        return $this->status === OrderStatusEnum::Created;
+    }
+
     /** Подтверждённая онлайн-оплата: заказ становится виден точке. */
     public function registerPayment(?string $externalPaymentId, \DateTimeImmutable $paidAt): void
     {

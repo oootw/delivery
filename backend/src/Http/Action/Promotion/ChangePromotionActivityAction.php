@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Promotion;
 
-use App\Application\Promotion\Command\ChangePromotionActivity\Command as ChangePromotionActivityCommand;
-use App\Application\Promotion\Command\ChangePromotionActivity\Handler as ChangePromotionActivityHandler;
+use App\Application\Promotion\Command\ChangePromotionActivity\ChangePromotionActivityCommand;
+use App\Application\Promotion\Command\ChangePromotionActivity\ChangePromotionActivityHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

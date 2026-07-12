@@ -35,6 +35,14 @@ final class MetricsReader
             'subscriptions' => [
                 'by_status' => $this->countGroupedByStatus('subscription'),
             ],
+            'promotions' => [
+                'discount_issued_kopecks' => $this->sumColumn('"order"', 'discount_kopecks'),
+                'top_promocodes' => $this->topPromocodes(),
+            ],
+            'loyalty' => [
+                'points_spent' => $this->sumColumn('"order"', 'points_spent'),
+                'points_earned' => $this->sumColumn('"order"', 'points_earned'),
+            ],
             'queue' => [
                 'pending' => $this->countMessengerQueue('default'),
                 'failed' => $this->countMessengerQueue('failed'),
@@ -99,6 +107,32 @@ final class MetricsReader
         return $this->guard(fn(): int => (int) $this->connection->fetchOne(
             sprintf('SELECT COUNT(*) FROM %s', $table),
         ), 0);
+    }
+
+    private function sumColumn(string $table, string $column): int
+    {
+        return $this->guard(fn(): int => (int) $this->connection->fetchOne(
+            sprintf('SELECT COALESCE(SUM(%s), 0) FROM %s', $column, $table),
+        ), 0);
+    }
+
+    /**
+     * @return array<int, array{code: string, redemptions: int}>
+     */
+    private function topPromocodes(): array
+    {
+        return $this->guard(function (): array {
+            $rows = $this->connection->fetchAllAssociative(
+                'SELECT code, redemptions_count FROM promotion'
+                . ' WHERE code IS NOT NULL AND redemptions_count > 0'
+                . ' ORDER BY redemptions_count DESC LIMIT 5',
+            );
+
+            return array_map(static fn(array $row): array => [
+                'code' => (string) $row['code'],
+                'redemptions' => (int) $row['redemptions_count'],
+            ], $rows);
+        }, []);
     }
 
     /**

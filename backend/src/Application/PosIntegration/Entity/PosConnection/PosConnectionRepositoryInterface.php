@@ -10,5 +10,5 @@ interface PosConnectionRepositoryInterface
 
     public function findById(int $id): ?PosConnection;
 
-    public function findByVenue(int $venueId): ?PosConnection;
+    public function findByVenueId(int $venueId): ?PosConnection;
 }

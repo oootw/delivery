@@ -65,7 +65,10 @@ class OrderRewards implements OrderRewardsInterface
             return;
         }
 
-        $account = $this->accounts->getOrCreate($request->workspaceId, $request->customerId);
+        // Блокируем строку кошелька на время резерва: конкурентный заказ дождётся
+        // коммита и перечитает свежий reservedPoints, поэтому суммарно не зарезервируем
+        // больше доступного (reserve() бросит на нехватке).
+        $account = $this->accounts->getOrCreateForUpdate($request->workspaceId, $request->customerId);
         $account->reserve($result->pointsSpent);
         $this->accounts->save($account);
 
@@ -120,9 +123,11 @@ class OrderRewards implements OrderRewardsInterface
 
     public function accrueOnCompleted(int $orderId, int $workspaceId, int $customerId, int $netPaidKopecks): int
     {
-        // Идемпотентность: одно начисление на заказ. Главная гарантия — терминальность
-        // статуса completed (повторный переход бросает исключение до этого вызова);
-        // existsEarnForOrder дополнительно страхует кэшбэк от двойного начисления.
+        // Идемпотентность начисления за заказ. Ниже всегда пишется ровно одна Earn-запись
+        // (даже при нулевом кэшбэке) — она служит маркером «за этот заказ уже начислено»,
+        // поэтому существующая Earn-запись коротит ВСЕ эффекты (траты/уровень/штампы), а не
+        // только кэшбэк. При гонке двойную запись отсекает уникальный индекс (order_id, earn):
+        // вторая транзакция падает на констрейнте и откатывается целиком (см. #1 — accrue в tx).
         if ($this->transactions->existsEarnForOrder($orderId)) {
             return 0;
         }
@@ -150,18 +155,17 @@ class OrderRewards implements OrderRewardsInterface
 
         $this->accounts->save($account);
 
-        if ($earned > 0) {
-            $this->transactions->save(
-                LoyaltyTransaction::buildNew(
-                    accountId: $account->id,
-                    workspaceId: $workspaceId,
-                    orderId: $orderId,
-                    type: LoyaltyTransactionTypeEnum::Earn,
-                    points: $earned,
-                    balanceAfter: $earnBalanceAfter,
-                ),
-            );
-        }
+        // Маркер начисления пишем всегда (points может быть 0) — он гарант идемпотентности.
+        $this->transactions->save(
+            LoyaltyTransaction::buildNew(
+                accountId: $account->id,
+                workspaceId: $workspaceId,
+                orderId: $orderId,
+                type: LoyaltyTransactionTypeEnum::Earn,
+                points: $earned,
+                balanceAfter: $earnBalanceAfter,
+            ),
+        );
 
         foreach ($stampRewards as $balanceAfter) {
             $this->transactions->save(

@@ -83,6 +83,21 @@ class LoyaltyAccount
         $this->touch();
     }
 
+    /** Сгорание баллов по сроку жизни: списывает только из доступных (резерв не трогаем). */
+    public function expire(int $points): void
+    {
+        if ($points <= 0) {
+            return;
+        }
+
+        if ($points > $this->availablePoints()) {
+            throw new \DomainException('Нельзя сжечь больше доступных баллов');
+        }
+
+        $this->pointsBalance -= $points;
+        $this->touch();
+    }
+
     /** Возврат ранее списанных баллов (отмена оплаченного заказа). */
     public function refund(int $points): void
     {

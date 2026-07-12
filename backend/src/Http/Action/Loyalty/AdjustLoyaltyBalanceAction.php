@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Loyalty;
 
-use App\Application\Loyalty\Command\AdjustLoyaltyBalance\Command as AdjustLoyaltyBalanceCommand;
-use App\Application\Loyalty\Command\AdjustLoyaltyBalance\Handler as AdjustLoyaltyBalanceHandler;
+use App\Application\Loyalty\Command\AdjustLoyaltyBalance\AdjustLoyaltyBalanceCommand;
+use App\Application\Loyalty\Command\AdjustLoyaltyBalance\AdjustLoyaltyBalanceHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

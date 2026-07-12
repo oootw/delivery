@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Order;
 
-use App\Application\Order\Command\CancelOrder\Command as CancelOrderCommand;
-use App\Application\Order\Command\CancelOrder\Handler as CancelOrderHandler;
+use App\Application\Order\Command\CancelOrder\CancelOrderCommand;
+use App\Application\Order\Command\CancelOrder\CancelOrderHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Workspace;
 
-use App\Application\Workspace\Command\RemoveStaffMember\Command as RemoveStaffMemberCommand;
-use App\Application\Workspace\Command\RemoveStaffMember\Handler as RemoveStaffMemberHandler;
+use App\Application\Workspace\Command\RemoveStaffMember\RemoveStaffMemberCommand;
+use App\Application\Workspace\Command\RemoveStaffMember\RemoveStaffMemberHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

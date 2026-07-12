@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Promotion;
 
-use App\Application\Promotion\Command\UpdatePromotion\Command as UpdatePromotionCommand;
-use App\Application\Promotion\Command\UpdatePromotion\Handler as UpdatePromotionHandler;
+use App\Application\Promotion\Command\UpdatePromotion\UpdatePromotionCommand;
+use App\Application\Promotion\Command\UpdatePromotion\UpdatePromotionHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

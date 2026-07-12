@@ -32,6 +32,9 @@
         <div class="metric-card"><div class="value">{{ metrics.totals.users }}</div><div class="label">Пользователей</div></div>
         <div class="metric-card"><div class="value">{{ metrics.totals.workspaces }}</div><div class="label">Воркспейсов</div></div>
         <div class="metric-card"><div class="value">{{ metrics.totals.venues }}</div><div class="label">Точек</div></div>
+        <div class="metric-card"><div class="value">{{ (metrics.promotions.discount_issued_kopecks / 100)|number_format(2, '.', ' ') }} ₽</div><div class="label">Выдано скидок</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.loyalty.points_spent }}</div><div class="label">Баллов потрачено</div></div>
+        <div class="metric-card"><div class="value">{{ metrics.loyalty.points_earned }}</div><div class="label">Баллов начислено</div></div>
     </div>
 
     <div class="metric-grid">
@@ -69,6 +72,15 @@
                 <div class="kv"><span>{{ status }}</span><strong>{{ total }}</strong></div>
             {% else %}
                 <p style="color:#6b7280;">Нет подписок.</p>
+            {% endfor %}
+        </div>
+
+        <div class="metric-panel">
+            <h3>Топ промокодов</h3>
+            {% for promo in metrics.promotions.top_promocodes %}
+                <div class="kv"><span>{{ promo.code }}</span><strong>{{ promo.redemptions }}</strong></div>
+            {% else %}
+                <p style="color:#6b7280;">Промокоды пока не применялись.</p>
             {% endfor %}
         </div>
     </div>

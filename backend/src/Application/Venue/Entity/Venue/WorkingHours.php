@@ -31,6 +31,23 @@ final class WorkingHours
     }
 
     /**
+     * Открыта ли точка в указанный день недели (1–7) и локальное время (HH:MM).
+     * Интервал полуоткрытый [opensAt, closesAt); дней с переходом через полночь нет
+     * (гарантирует WorkingHoursRule: opensAt < closesAt). Сравнение строк HH:MM
+     * лексикографическое — корректно для дополненного нулём времени.
+     */
+    public function isOpenAt(int $weekday, string $time): bool
+    {
+        foreach ($this->days as $day) {
+            if ($day->weekday === $weekday && $time >= $day->opensAt && $time < $day->closesAt) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @return array<int, array{weekday: int, opens_at: string, closes_at: string}>
      */
     public function toArray(): array

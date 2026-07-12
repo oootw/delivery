@@ -13,6 +13,7 @@ use App\Application\Menu\Entity\Modifier\ModifierRepositoryInterface;
 use App\Application\Menu\Entity\ModifierGroup\ModifierGroup;
 use App\Application\Menu\Entity\ModifierGroup\ModifierGroupRepositoryInterface;
 use App\Application\PosIntegration\Gateway\PosMenuSnapshot;
+use App\Shared\Transaction\TransactionInterface;
 
 /**
  * Приводит меню точки в соответствие снимку из POS: обновляет и создаёт записи
@@ -25,14 +26,19 @@ final class MenuImporter
         private readonly MenuItemRepositoryInterface $items,
         private readonly ModifierGroupRepositoryInterface $modifierGroups,
         private readonly ModifierRepositoryInterface $modifiers,
+        private readonly TransactionInterface $transaction,
     ) {}
 
     public function import(int $venueId, PosMenuSnapshot $snapshot): void
     {
-        $this->importCategories($venueId, $snapshot);
-        $this->importItems($venueId, $snapshot);
-        $this->importModifierGroups($venueId, $snapshot);
-        $this->importModifiers($venueId, $snapshot);
+        // Весь импорт — одной транзакцией: меню не остаётся полуобновлённым при сбое,
+        // а множество пер-записных коммитов схлопывается в один.
+        $this->transaction->wrap(function () use ($venueId, $snapshot): void {
+            $this->importCategories($venueId, $snapshot);
+            $this->importItems($venueId, $snapshot);
+            $this->importModifierGroups($venueId, $snapshot);
+            $this->importModifiers($venueId, $snapshot);
+        });
     }
 
     private function importCategories(int $venueId, PosMenuSnapshot $snapshot): void
@@ -87,6 +93,7 @@ final class MenuImporter
                         isAvailable: $posItem->isAvailable,
                         position: $posItem->position,
                         modifierGroupExternalIds: $posItem->modifierGroupExternalIds,
+                        posNutrition: $posItem->nutrition,
                     );
                 } else {
                     $item->applyFromPos(
@@ -98,6 +105,7 @@ final class MenuImporter
                         isAvailable: $posItem->isAvailable,
                         position: $posItem->position,
                         modifierGroupExternalIds: $posItem->modifierGroupExternalIds,
+                        posNutrition: $posItem->nutrition,
                     );
                 }
 

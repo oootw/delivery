@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Doctrine\Domain\Authorize\Token;
 
-use App\Infrastructure\Doctrine\Domain\Users\User;
+use App\Infrastructure\Doctrine\Domain\Authorize\User\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 

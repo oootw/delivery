@@ -28,6 +28,12 @@ class Code
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $usedAt = null;
+
+    #[ORM\Column(options: ['default' => 0])]
+    private int $attempts = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +95,30 @@ class Code
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUsedAt(): ?\DateTimeImmutable
+    {
+        return $this->usedAt;
+    }
+
+    public function setUsedAt(?\DateTimeImmutable $usedAt): static
+    {
+        $this->usedAt = $usedAt;
+
+        return $this;
+    }
+
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function setAttempts(int $attempts): static
+    {
+        $this->attempts = $attempts;
 
         return $this;
     }

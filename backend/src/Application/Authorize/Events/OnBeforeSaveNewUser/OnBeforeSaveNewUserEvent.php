@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\Application\Authorize\Events\OnBeforeSaveNewUser;
 
-use App\Infrastructure\Doctrine\Domain\Users\User;
 use Symfony\Contracts\EventDispatcher\Event;
 
+/**
+ * Пользователь вот-вот будет создан. Диспатчится до сохранения (id ещё нет), поэтому
+ * несёт только известные до записи данные — телефон.
+ */
 class OnBeforeSaveNewUserEvent extends Event
 {
-    public function __construct(private User $user) {}
+    public function __construct(
+        public readonly string $phone,
+    ) {}
 
-    public function getUser(): User
+    public function getPhone(): string
     {
-        return $this->user;
+        return $this->phone;
     }
 }

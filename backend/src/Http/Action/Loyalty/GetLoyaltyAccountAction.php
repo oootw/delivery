@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Loyalty;
 
-use App\Application\Loyalty\Query\GetLoyaltyAccount\Fetcher as GetLoyaltyAccountFetcher;
-use App\Application\Loyalty\Query\GetLoyaltyAccount\Query as GetLoyaltyAccountQuery;
+use App\Application\Loyalty\Query\GetLoyaltyAccountByCustomerId\GetLoyaltyAccountByCustomerIdFetcher;
+use App\Application\Loyalty\Query\GetLoyaltyAccountByCustomerId\GetLoyaltyAccountByCustomerIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -19,7 +19,7 @@ use Webmozart\Assert\Assert;
 class GetLoyaltyAccountAction extends AbstractController
 {
     public function __construct(
-        private readonly GetLoyaltyAccountFetcher $getLoyaltyAccount,
+        private readonly GetLoyaltyAccountByCustomerIdFetcher $getLoyaltyAccount,
     ) {}
 
     #[Route('/loyalty/account', name: 'app_get_loyalty_account', methods: ['GET'])]
@@ -34,7 +34,7 @@ class GetLoyaltyAccountAction extends AbstractController
             $user = $this->getUser();
 
             $account = $this->getLoyaltyAccount->fetch(
-                new GetLoyaltyAccountQuery(
+                new GetLoyaltyAccountByCustomerIdQuery(
                     userId: $user->claims->userId,
                     workspaceId: (int) $workspaceId,
                 ),

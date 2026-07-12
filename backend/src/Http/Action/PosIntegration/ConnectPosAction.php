@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\PosIntegration;
 
-use App\Application\PosIntegration\Command\ConnectPos\Command as ConnectPosCommand;
-use App\Application\PosIntegration\Command\ConnectPos\Handler as ConnectPosHandler;
+use App\Application\PosIntegration\Command\ConnectPos\ConnectPosCommand;
+use App\Application\PosIntegration\Command\ConnectPos\ConnectPosHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

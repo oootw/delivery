@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Menu\Entity\MenuItem;
 
+use App\Application\Menu\Nutrition\Nutrition;
+
 /**
  * Позиция меню. Цена в копейках. isAvailable отражает стоп-лист POS,
- * isArchived — что позиция исчезла из выгрузки POS.
+ * isArchived — что позиция исчезла из выгрузки POS. posNutrition — базовое БЖУ из POS
+ * (ручной оверрайд хранится отдельно в MenuItemNutrition и переживает импорт).
  */
 class MenuItem
 {
@@ -24,6 +27,7 @@ class MenuItem
         /** @var string[] */
         public array $modifierGroupExternalIds,
         public bool $isArchived,
+        public ?Nutrition $posNutrition = null,
     ) {}
 
     /**
@@ -40,6 +44,7 @@ class MenuItem
         bool $isAvailable,
         int $position,
         array $modifierGroupExternalIds,
+        ?Nutrition $posNutrition = null,
     ): self {
         return new self(
             id: null,
@@ -54,6 +59,7 @@ class MenuItem
             position: $position,
             modifierGroupExternalIds: $modifierGroupExternalIds,
             isArchived: false,
+            posNutrition: $posNutrition,
         );
     }
 
@@ -69,6 +75,7 @@ class MenuItem
         bool $isAvailable,
         int $position,
         array $modifierGroupExternalIds,
+        ?Nutrition $posNutrition = null,
     ): void {
         $this->categoryExternalId = $categoryExternalId;
         $this->name = $name;
@@ -79,6 +86,7 @@ class MenuItem
         $this->position = $position;
         $this->modifierGroupExternalIds = $modifierGroupExternalIds;
         $this->isArchived = false;
+        $this->posNutrition = $posNutrition;
     }
 
     public function archive(): void

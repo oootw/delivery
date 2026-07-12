@@ -55,7 +55,7 @@ class MembershipRepository extends ServiceEntityRepository implements Membership
     /**
      * @return MembershipEntity[]
      */
-    public function findByUser(int $userId): array
+    public function findAllByUserId(int $userId): array
     {
         return array_map(
             fn(Membership $record): MembershipEntity => $this->toEntity($record),

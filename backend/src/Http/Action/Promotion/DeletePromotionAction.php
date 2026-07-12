@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Promotion;
 
-use App\Application\Promotion\Command\DeletePromotion\Command as DeletePromotionCommand;
-use App\Application\Promotion\Command\DeletePromotion\Handler as DeletePromotionHandler;
+use App\Application\Promotion\Command\DeletePromotion\DeletePromotionCommand;
+use App\Application\Promotion\Command\DeletePromotion\DeletePromotionHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

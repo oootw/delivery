@@ -33,7 +33,17 @@ class Promotion
         public bool $isActive,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
+        public ?string $bannerTitle = null,
+        public ?string $bannerText = null,
     ) {}
+
+    /** Баннерные поля для витрины клиента (картинка баннера хранится в storage). */
+    public function setBanner(?string $bannerTitle, ?string $bannerText): void
+    {
+        $this->bannerTitle = $bannerTitle;
+        $this->bannerText = $bannerText;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
 
     /**
      * @param list<string> $targetRefs

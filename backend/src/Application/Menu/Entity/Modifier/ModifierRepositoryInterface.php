@@ -8,6 +8,8 @@ interface ModifierRepositoryInterface
 {
     public function save(Modifier $modifier): int;
 
+    public function findById(int $id): ?Modifier;
+
     /**
      * @return Modifier[]
      */

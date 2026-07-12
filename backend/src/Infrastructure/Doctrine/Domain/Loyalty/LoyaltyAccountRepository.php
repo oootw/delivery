@@ -7,6 +7,7 @@ namespace App\Infrastructure\Doctrine\Domain\Loyalty;
 use App\Application\Loyalty\Entity\Account\LoyaltyAccount as LoyaltyAccountEntity;
 use App\Application\Loyalty\Entity\Account\LoyaltyAccountRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -65,6 +66,42 @@ class LoyaltyAccountRepository extends ServiceEntityRepository implements Loyalt
         $this->save($account);
 
         return $account;
+    }
+
+    public function getOrCreateForUpdate(int $workspaceId, int $customerId): LoyaltyAccountEntity
+    {
+        $record = $this->createQueryBuilder('a')
+            ->where('a.workspaceId = :workspaceId')
+            ->andWhere('a.customerId = :customerId')
+            ->setParameter('workspaceId', $workspaceId)
+            ->setParameter('customerId', $customerId)
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        if ($record !== null) {
+            return $this->toEntity($record);
+        }
+
+        // Кошелька ещё нет (первое списание гостя) — создаём. Конкурентное создание
+        // отсечёт уникальный индекс (workspace_id, customer_id).
+        $account = LoyaltyAccountEntity::buildNew($workspaceId, $customerId);
+        $this->save($account);
+
+        return $account;
+    }
+
+    public function findByWorkspaceWithPoints(int $workspaceId): array
+    {
+        return array_map(
+            fn(LoyaltyAccount $record): LoyaltyAccountEntity => $this->toEntity($record),
+            $this->createQueryBuilder('a')
+                ->where('a.workspaceId = :workspaceId')
+                ->andWhere('a.pointsBalance > 0')
+                ->setParameter('workspaceId', $workspaceId)
+                ->getQuery()
+                ->getResult(),
+        );
     }
 
     private function toEntity(LoyaltyAccount $record): LoyaltyAccountEntity

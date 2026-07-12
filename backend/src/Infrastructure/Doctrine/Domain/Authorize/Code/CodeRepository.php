@@ -4,6 +4,7 @@ namespace App\Infrastructure\Doctrine\Domain\Authorize\Code;
 
 use App\Application\Authorize\Entity\Code\Code as EntityCode;
 use App\Application\Authorize\Entity\Code\CodeRepositoryInterface;
+use App\Application\Authorize\Entity\Code\CodeTypeEnum;
 use App\Infrastructure\Doctrine\Domain\Authorize\Code\Code;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,28 +19,87 @@ class CodeRepository extends ServiceEntityRepository implements CodeRepositoryIn
         parent::__construct($registry, Code::class);
     }
 
-    public function validateCodeByCreatedAt(string $phone): bool
+    public function findActiveCode(string $phone, CodeTypeEnum $codeType): ?EntityCode
     {
-        return true;
+        $code = $this->createQueryBuilder('c')
+            ->where('c.phone = :phone')
+            ->andWhere('c.codeType = :codeType')
+            ->setParameter('phone', $phone)
+            ->setParameter('codeType', $codeType->value)
+            ->orderBy('c.createdAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($code === null) {
+            return null;
+        }
+
+        return new EntityCode(
+            id: $code->getId(),
+            phone: $code->getPhone(),
+            code: $code->getCode(),
+            codeType: $code->getCodeType(),
+            expiresAt: $code->getExpiresAt(),
+            usedAt: $code->getUsedAt(),
+            attempts: $code->getAttempts(),
+        );
+    }
+
+    public function hasRecentCode(string $phone, \DateTimeImmutable $since): bool
+    {
+        $count = (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.phone = :phone')
+            ->andWhere('c.createdAt >= :since')
+            ->setParameter('phone', $phone)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
     }
 
     public function countCreatedSince(string $phone, \DateTime $since): int
     {
-        return 0;
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.phone = :phone')
+            ->andWhere('c.createdAt >= :since')
+            ->setParameter('phone', $phone)
+            ->setParameter('since', \DateTimeImmutable::createFromMutable($since))
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
-    public function validateCode(EntityCode $code): bool
+    public function save(EntityCode $entityCode): void
     {
-        return true;
+        $code = $this->find($entityCode->id);
+
+        if ($code === null) {
+            throw new \DomainException('Код авторизации не найден для сохранения');
+        }
+
+        $code->setAttempts($entityCode->attempts);
+        $code->setUsedAt($entityCode->usedAt);
+
+        $this->getEntityManager()->flush();
     }
+
+    /** Срок жизни кода авторизации. */
+    private const CODE_TTL = '+5 minutes';
 
     public function create(EntityCode $entityCode): int
     {
+        $now = new \DateTimeImmutable();
+
         $code = new Code();
 
         $code->setCode($entityCode->code);
         $code->setPhone($entityCode->phone);
         $code->setCodeType($entityCode->codeType);
+        $code->setCreatedAt($now);
+        $code->setExpiresAt($now->modify(self::CODE_TTL));
 
         $this->getEntityManager()->persist($code);
         $this->getEntityManager()->flush();

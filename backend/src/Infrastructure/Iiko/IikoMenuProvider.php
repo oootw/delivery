@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Iiko;
 
+use App\Application\Menu\Nutrition\Nutrition;
+use App\Application\Menu\Nutrition\NutritionFacts;
 use App\Application\PosIntegration\Entity\PosConnection\PosConnection;
 use App\Application\PosIntegration\Entity\PosConnection\PosSystemEnum;
 use App\Application\PosIntegration\Gateway\PosCategory;
@@ -146,7 +148,58 @@ final class IikoMenuProvider implements PosMenuProviderInterface
             isAvailable: $iikoItem->getIsHidden() !== true,
             position: $position,
             modifierGroupExternalIds: $modifierGroupExternalIds,
+            nutrition: $this->mapNutrition($firstSize),
         );
+    }
+
+    /**
+     * Маппит пищевую ценность из размера iiko: масса порции, БЖУ на 100 г
+     * (nutritionPerHundredGrams) и на порцию (первый элемент nutritions).
+     * При отсутствии данных — null (структура ответа iiko может отличаться).
+     */
+    private function mapNutrition(mixed $size): ?Nutrition
+    {
+        if ($size === null) {
+            return null;
+        }
+
+        $weight = $size->getPortionWeightGrams();
+        $weightGrams = $weight !== null ? (int) round((float) $weight) : null;
+
+        $per100List = $size->getNutritionPerHundredGrams() ?? [];
+        $per100 = $this->mapNutritionFacts($per100List[0] ?? null);
+
+        $portionList = $size->getNutritions() ?? [];
+        $perPortion = $this->mapNutritionFacts($portionList[0] ?? null);
+
+        $nutrition = new Nutrition(
+            weightGrams: $weightGrams,
+            per100g: $per100,
+            perPortion: $perPortion,
+        );
+
+        return $nutrition->isEmpty() ? null : $nutrition;
+    }
+
+    private function mapNutritionFacts(mixed $facts): ?NutritionFacts
+    {
+        if ($facts === null) {
+            return null;
+        }
+
+        $mapped = new NutritionFacts(
+            kcal: $this->roundOrNull($facts->getEnergy()),
+            proteins: $this->roundOrNull($facts->getProteins()),
+            fats: $this->roundOrNull($facts->getFats()),
+            carbs: $this->roundOrNull($facts->getCarbs()),
+        );
+
+        return $mapped->isEmpty() ? null : $mapped;
+    }
+
+    private function roundOrNull(mixed $value): ?int
+    {
+        return $value === null ? null : (int) round((float) $value);
     }
 
     private function mapModifierGroup(ExternalMenuModifierGroup $iikoGroup): PosModifierGroup

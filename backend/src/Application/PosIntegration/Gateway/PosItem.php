@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\PosIntegration\Gateway;
 
+use App\Application\Menu\Nutrition\Nutrition;
+
 final class PosItem
 {
     /**
@@ -19,5 +21,6 @@ final class PosItem
         public readonly bool $isAvailable,
         public readonly int $position,
         public readonly array $modifierGroupExternalIds,
+        public readonly ?Nutrition $nutrition = null,
     ) {}
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Venue;
 
-use App\Application\Venue\Command\UpdateVenue\Command as UpdateVenueCommand;
-use App\Application\Venue\Command\UpdateVenue\Handler as UpdateVenueHandler;
+use App\Application\Venue\Command\UpdateVenue\UpdateVenueCommand;
+use App\Application\Venue\Command\UpdateVenue\UpdateVenueHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

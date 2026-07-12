@@ -354,6 +354,36 @@ Command/Handler и/или Query/Fetcher → Action → `lint:container` → от
 - Аудит: добавить новые сущности в whitelist `AuditSubscriber`.
 - **Уточнить:** нужен ли отдельный публичный эндпоинт списка активных акций для гостя (витрина промо).
 
+> **Решения (2026-07-10):** публичная витрина промо — **да** (GET-список активных automatic-акций, промокоды скрыты);
+> quote — **только авторизованным** (customerId из JWT, полная разбивка с баллами/уровнем/первым заказом);
+> порядок — **сначала quote, потом админка/метрики/аудит**.
+>
+> **Срез 1 — quote (реализовано 2026-07-10).** Расчёт цены вынесен из `PlaceOrder/Handler` в общий
+> `Application/Order/Pricing/OrderPriceCalculator::calculate(venueId, customerId, type, cartLines, promocode, pointsToSpend)`
+> → `OrderPriceBreakdown` (позиции + subtotal/discount/appliedDiscounts/pointsSpent/pointsDiscount/payable + несёт
+> pricingRequest/pricingResult/redeemRequest/redeemResult для побочных эффектов оформления). `PlaceOrderLine` переименован
+> и перенесён в `Order/Pricing/CartLine` (единый вход корзины для оформления и quote). `PlaceOrder/Handler` теперь тонкий:
+> зовёт калькулятор → валидирует адрес доставки → `Order::buildNew` → save → `recordApplied`/`reserveOnPlace` (из breakdown).
+> Quote: `Order/Query/QuoteOrder/{Query,Fetcher}` + `Order/Query/QuoteView` (та же разбивка, что OrderView, без полей заказа);
+> Action `POST /api/v1/venues/{venueId}/orders/quote` (auth-only, зеркалит валидацию PlaceOrder, заказ не создаётся).
+> Проверено: `php -l` OK, `lint:container` OK, роут `app_quote_order` зарегистрирован. Миграций нет.
+>
+> **Срез 2 — витрина/админка/метрики/аудит (реализовано 2026-07-11).** Гостевая витрина: `Promotion/Query/GetActivePromotions/{Query,Fetcher}`
+> + `PublicPromotionView` (name/reward/target/conditions/stackable — без кода, лимитов, счётчиков), Action
+> `GET /api/v1/venues/{venueId}/promotions` (любой авторизованный, как просмотр меню; отдаёт только активные automatic
+> через `findActiveAutomaticByVenue`, промокоды не показываются). EasyAdmin read-only: `PromotionCrudController`,
+> `LoyaltyProgramCrudController`, `LoyaltyTierCrudController`, `LoyaltyTransactionCrudController`, `StampProgramCrudController`
+> (DETAIL, NEW/EDIT/DELETE отключены) + новая секция меню «Лояльность и акции» в DashboardController. Метрики: MetricsReader
+> +`promotions.discount_issued_kopecks`/`top_promocodes` (из promotion.redemptions_count) +`loyalty.points_spent`/`points_earned`
+> (SUM по "order"), выведены карточками и панелью «Топ промокодов» на дашборде. Аудит: в whitelist AuditSubscriber добавлены
+> Promotion/LoyaltyProgram/LoyaltyTier/StampProgram (леджер LoyaltyTransaction не логируем — он сам аудит-след баллов).
+> Проверено: `php -l` OK, `lint:container` OK, `lint:twig` OK, `cache:clear` OK, роут `app_get_active_promotions` OK.
+> **Миграций нет** — новых таблиц/колонок M9.6 не вводит.
+>
+> **M9.6 завершён → веха M9 (скидки+промокоды+лояльность) закрыта.** Остаётся общий долг M7 (транзакционность
+> заказа+redemption+резерва, unit-тесты PromotionEngine/TierResolver/RewardCalculator, конкурентность резерва баллов,
+> сгорание баллов) — вне M9.
+
 ---
 
 ## 6. Нефункциональные требования и риски

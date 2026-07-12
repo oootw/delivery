@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Order;
 
-use App\Application\Order\Command\PlaceOrder\Command as PlaceOrderCommand;
-use App\Application\Order\Command\PlaceOrder\Handler as PlaceOrderHandler;
-use App\Application\Order\Command\PlaceOrder\PlaceOrderLine;
+use App\Application\Order\Command\PlaceOrder\PlaceOrderCommand;
+use App\Application\Order\Command\PlaceOrder\PlaceOrderHandler;
+use App\Application\Order\Pricing\CartLine;
+use App\Application\Order\Pricing\ComboCartLine;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -21,7 +22,6 @@ class PlaceOrderAction extends AbstractController
 {
     public function __construct(
         private readonly PlaceOrderHandler $placeOrder,
-        private readonly string $cloudPaymentsPublicId,
     ) {}
 
     #[Route('/venues/{venueId}/orders', name: 'app_place_order', methods: ['POST'], requirements: ['venueId' => '\d+'])]
@@ -31,13 +31,15 @@ class PlaceOrderAction extends AbstractController
             $body = $request->toArray();
 
             $type = $body['type'] ?? null;
-            $items = $body['items'] ?? null;
+            $items = $body['items'] ?? [];
+            $combos = $body['combos'] ?? [];
             $contactName = $body['contact_name'] ?? null;
             $contactPhone = $body['contact_phone'] ?? null;
 
             Assert::notEmpty($type, 'Укажите тип заказа');
-            Assert::isArray($items, 'Добавьте позиции в заказ');
-            Assert::notEmpty($items, 'Заказ пустой');
+            Assert::isArray($items, 'Некорректные позиции заказа');
+            Assert::isArray($combos, 'Некорректные комбо заказа');
+            Assert::false($items === [] && $combos === [], 'Заказ пустой');
             Assert::notEmpty($contactName, 'Укажите имя для заказа');
             Assert::notEmpty($contactPhone, 'Укажите телефон для связи');
 
@@ -56,22 +58,23 @@ class PlaceOrderAction extends AbstractController
                     comment: $body['comment'] ?? null,
                     promocode: $body['promocode'] ?? null,
                     pointsToSpend: $body['points_to_spend'] ?? null,
+                    comboLines: $this->readComboLines($combos),
                 ),
             );
 
-            return ApiResponse::success([
+            $response = [
                 'order_id' => $placedOrder->orderId,
                 'realtime_topic' => 'orders/' . $placedOrder->orderId,
-                'payment' => [
-                    'public_id' => $this->cloudPaymentsPublicId,
-                    'invoice_id' => $placedOrder->invoiceId,
-                    'account_id' => $placedOrder->accountId,
-                    'amount' => $placedOrder->amountRubles,
-                    'currency' => $placedOrder->currency,
-                    'description' => 'Оплата заказа №' . $placedOrder->orderId,
-                    'data' => ['kind' => 'order'],
-                ],
-            ]);
+                'payment_required' => $placedOrder->paymentRequired,
+            ];
+
+            // Бесплатный заказ уже оплачен на сервере — инструкция оплаты не нужна.
+            // Иначе отдаём провайдер-зависимую инструкцию (виджет CP / embedded ЮKassa).
+            if ($placedOrder->paymentInstruction !== null) {
+                $response['payment'] = $placedOrder->paymentInstruction->toArray();
+            }
+
+            return ApiResponse::success($response);
         } catch (InvalidArgumentException | \DomainException $exception) {
             return ApiResponse::error($exception->getMessage());
         } catch (\Throwable $exception) {
@@ -89,7 +92,7 @@ class PlaceOrderAction extends AbstractController
 
     /**
      * @param array<int, mixed> $items
-     * @return PlaceOrderLine[]
+     * @return CartLine[]
      */
     private function readLines(array $items): array
     {
@@ -104,10 +107,36 @@ class PlaceOrderAction extends AbstractController
             Assert::notEmpty($menuItemExternalId, 'У позиции нет идентификатора');
             Assert::integer($quantity, 'Количество должно быть числом');
 
-            $lines[] = new PlaceOrderLine(
+            $lines[] = new CartLine(
                 menuItemExternalId: (string) $menuItemExternalId,
                 quantity: $quantity,
                 modifierExternalIds: array_map('strval', $item['modifiers'] ?? []),
+            );
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @param array<int, mixed> $combos
+     * @return ComboCartLine[]
+     */
+    private function readComboLines(array $combos): array
+    {
+        $lines = [];
+
+        foreach ($combos as $combo) {
+            Assert::isArray($combo, 'Некорректное комбо заказа');
+
+            $comboExternalId = $combo['combo_external_id'] ?? null;
+            $quantity = $combo['quantity'] ?? null;
+
+            Assert::notEmpty($comboExternalId, 'У комбо нет идентификатора');
+            Assert::integer($quantity, 'Количество должно быть числом');
+
+            $lines[] = new ComboCartLine(
+                comboExternalId: (string) $comboExternalId,
+                quantity: $quantity,
             );
         }
 

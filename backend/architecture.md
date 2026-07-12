@@ -19,7 +19,8 @@
   - **`src/Application/{Domain}`** — доменный слой: сущности домена, интерфейсы репозиториев (порты), команды/обработчики, запросы/фетчеры, доменные сервисы и события. Этот слой не знает про Doctrine, HTTP и внешние API.
   - **`src/Infrastructure`** — адаптеры: Doctrine-сущности (ORM-мэппинг) и реализации репозиториев, клиенты внешних систем (CloudPayments, iiko, rkeeper), интеграции.
   - **`src/Http`** — транспортный слой: контроллеры-действия и безопасность (JWT).
-  - **`src/Shared`** — переиспользуемое между доменами: сервисы (`SMSManager`, `JWTManager`, `LoggerService`), enum'ы, value-object'ы, трейты.
+  - **`src/Console`** — точка входа CLI: консольные команды (крон-задачи, dev-ops утилиты). Как и `Http`, это entry-point — тонкие обёртки, зовущие доменные Command/Handler и Query/Fetcher через порты; собственной бизнес-логики и прямого доступа к Doctrine/Infrastructure не содержат.
+  - **`src/Shared`** — переиспользуемое между доменами: сервисы (`SMSManager`, `JWTManager`, `LoggerService`), контракты провайдер-независимых портов, используемых несколькими доменами (`Contract/`, например платёжные шлюзы), enum'ы, value-object'ы, трейты.
 
 - **DDD-границы**:
   - Внешний мир (HTTP, Messenger, webhooks) общается с доменом только через **Command → Handler**, **Query → Fetcher** и **обработчики событий**.
@@ -100,6 +101,8 @@
     - Внутри — только доменная логика: работа с сущностями, вызовы репозиториев и других доменных сервисов.
     - Бизнес-ошибки — `throw new \DomainException('Сообщение на русском')`.
     - Никакого Doctrine/HTTP/внешних SDK напрямую — только через порты.
+
+- **Атомарность (транзакции)**: если use-case делает **несколько записей**, которые должны примениться «всё или ничего» (например, заказ + запись применённых скидок + резерв баллов; воркспейс + owner-membership; пакетный импорт меню), оборачиваем их в порт `App\Shared\Transaction\TransactionInterface::wrap(callable)` (адаптер `Infrastructure/Doctrine/Transaction/DoctrineTransaction` поверх `EntityManagerInterface::wrapInTransaction`). Внутри замыкания — только записи через порты репозиториев; при исключении всё откатывается, коммит один. Чистые расчёты и валидацию держим **вне** транзакции.
 
 ---
 
@@ -183,10 +186,15 @@
 
 ## 9. Внешние интеграции (платежи, POS-системы)
 
-- **Порт в домене**: интерфейс клиента объявляем в `Application` (например, `PaymentGatewayInterface`, `PosMenuProviderInterface`).
-- **Адаптер в инфраструктуре**: реализация под конкретного провайдера в `src/Infrastructure/{Provider}/` (CloudPayments; iiko/rkeeper под общим портом POS).
-- Сгенерированные из OpenAPI SDK живут в `libs/` (PSR-4 в `composer.json`) и используются **только** из адаптеров инфраструктуры, никогда из домена.
-- Webhooks (например, CloudPayments) принимаем отдельным Action, проверяем подпись в адаптере, дальше — через Command/Handler.
+- **Порт внешнего клиента**: интерфейс объявляем в `Application` (например, `PosMenuProviderInterface`). Если контракт провайдер-независим и используется **несколькими** доменами (платежи — Subscription/Billing + Order), выносим его в `src/Shared/Contract/{Area}/{Contract}/` (например, `Shared/Contract/Payment/...`).
+- **Адаптер в инфраструктуре**: реализация под конкретного провайдера в `src/Infrastructure/{Provider}/` (`CloudPayments`, `YooKassa`; iiko/rkeeper под общим портом POS).
+- **Платежи — два контура.**
+  - *Подписки владельца* — всегда платформенный **CloudPayments** (env-креды платформы). Порт `Shared/Contract/Payment/PaymentGateway/PaymentGatewayInterface` (проверка HMAC-подписи webhook + отмена подписки), адаптер `Infrastructure/CloudPayments/CloudPaymentsGateway`.
+  - *Оплата заказов гостями* — провайдер выбирается **на уровне воркспейса** (`Billing/Entity/WorkspacePaymentSettings`: `cloudpayments|yookassa` + шифрованные креды мерчант-аккаунта владельца, `SecretCipher`). Порт `Shared/Contract/Payment/OrderPaymentGateway/OrderPaymentGatewayInterface` + резолвер `OrderPaymentGatewayResolverInterface` (по `workspaceId` собирает адаптер; воркспейс без активной настройки → платформенный CloudPayments). CloudPayments-заказ подтверждает виджет на фронте; ЮKassa-заказ бэкенд создаёт через API (`POST /payments`, embedded) и отдаёт `confirmation_token`.
+- Сгенерированные из OpenAPI SDK живут в `libs/` (PSR-4 в `composer.json`) и используются **только** из адаптеров инфраструктуры, никогда из домена. Сейчас в `libs/` — только `IIKO`; платёжные провайдеры интегрированы через штатный `HttpClient` без SDK (YooMoney-клиент удалён).
+- Webhooks принимаем отдельным Action, дальше — через Command/Handler. **CloudPayments** — проверяем HMAC-подпись «сырого» тела в адаптере. **ЮKassa** (подписи нет) — подтверждаем перезапросом платежа у API кредами воркспейса (`OrderPaymentStatusResolverInterface`), заказ сопоставляем по `metadata.order_id`.
+
+- **Файлы и изображения**: доступ к файловому хранилищу — тоже через порт в `Application` (например, `Venue/Logo/VenueLogoStorageInterface`) + адаптер в `Infrastructure/Storage`. Домен оперирует логическими ключами (slug воркспейса, id сущности), адаптер знает физические пути. Изображения хранятся в `public/upload/{slug}/` и отдаются веб-сервером напрямую; API возвращает **URL** (`/upload/...`), а не бинарные байты. Приём загрузки (multipart) валидируем в Action (MIME по содержимому, лимит размера), в домен передаём путь к принятому файлу и расширение.
 
 ---
 

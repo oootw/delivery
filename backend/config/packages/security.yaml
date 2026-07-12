@@ -6,7 +6,7 @@ security:
         users_in_memory: { memory: null }
         app_user_provider:
             entity:
-                class: App\Infrastructure\Doctrine\Domain\Users\User
+                class: App\Infrastructure\Doctrine\Domain\Authorize\User\User
                 property: phone
 
     firewalls:

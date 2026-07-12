@@ -24,4 +24,7 @@ enum LoyaltyTransactionTypeEnum: string
 
     /** Баллы, выданные за заполненную карту штампов. */
     case StampReward = 'stamp_reward';
+
+    /** Сгорание баллов по сроку жизни (pointsLifetimeDays). */
+    case Expire = 'expire';
 }

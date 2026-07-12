@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messenger\MenuImport;
 
-use App\Application\PosIntegration\Command\ImportMenu\Command as ImportMenuCommand;
-use App\Application\PosIntegration\Command\ImportMenu\Handler as ImportMenuHandler;
+use App\Application\PosIntegration\Command\ImportMenu\ImportMenuCommand;
+use App\Application\PosIntegration\Command\ImportMenu\ImportMenuHandler;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]

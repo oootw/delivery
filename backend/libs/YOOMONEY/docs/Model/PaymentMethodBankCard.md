@@ -1,9 +1,0 @@
-# PaymentMethodBankCard
-
-## Properties
-
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**card** | [**\YOOMONEY\Model\BankCardData**](BankCardData.md) |  | [optional]
-
-[[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

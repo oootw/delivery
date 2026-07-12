@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Admin;
 
-use App\Infrastructure\Doctrine\Domain\Users\User;
+use App\Infrastructure\Doctrine\Domain\Authorize\User\User;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;

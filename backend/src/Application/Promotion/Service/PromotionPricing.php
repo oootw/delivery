@@ -62,7 +62,7 @@ class PromotionPricing implements OrderPricingInterface
         }
 
         if ($request->promocode !== null && trim($request->promocode) !== '') {
-            $candidates[] = $this->resolvePromocode($request, $context);
+            $candidates[] = $this->requireApplicablePromocode($request, $context);
         }
 
         $result = $this->engine->apply($candidates, $context);
@@ -156,7 +156,7 @@ class PromotionPricing implements OrderPricingInterface
         $this->promotions->deleteRedemptionsByOrder($orderId);
     }
 
-    private function resolvePromocode(OrderPricingRequest $request, PromotionContext $context): Promotion
+    private function requireApplicablePromocode(OrderPricingRequest $request, PromotionContext $context): Promotion
     {
         $code = Promotion::normalizeCode($request->promocode ?? '');
         $promotion = $this->promotions->findActivePromocode($request->workspaceId, $code);

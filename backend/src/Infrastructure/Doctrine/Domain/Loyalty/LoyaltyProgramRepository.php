@@ -53,6 +53,18 @@ class LoyaltyProgramRepository extends ServiceEntityRepository implements Loyalt
         return $record !== null ? $this->toEntity($record) : null;
     }
 
+    public function findAllWithExpiry(): array
+    {
+        return array_map(
+            fn(LoyaltyProgram $record): LoyaltyProgramEntity => $this->toEntity($record),
+            $this->createQueryBuilder('p')
+                ->where('p.isEnabled = true')
+                ->andWhere('p.pointsLifetimeDays IS NOT NULL')
+                ->getQuery()
+                ->getResult(),
+        );
+    }
+
     private function toEntity(LoyaltyProgram $record): LoyaltyProgramEntity
     {
         return new LoyaltyProgramEntity(

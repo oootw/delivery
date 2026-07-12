@@ -29,6 +29,8 @@ class Subscription
         public ?\DateTimeImmutable $currentPeriodEnd,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
+        /** TransactionId последнего успешного платежа — для дедупликации повторной доставки webhook'а. */
+        public ?string $lastPaymentTransactionId = null,
     ) {}
 
     public static function buildNew(int $userId, TarifCodeEnum $tarifCode, string $invoiceId): self
@@ -48,15 +50,40 @@ class Subscription
         );
     }
 
-    /** Успешный платёж: активирует подписку и продлевает оплаченный период на месяц вперёд. */
-    public function registerPayment(?string $externalId, \DateTimeImmutable $paidAt): void
+    /**
+     * Успешный платёж: активирует подписку и продлевает оплаченный период на месяц вперёд.
+     * Повторная доставка того же платежа (одинаковый transactionId) игнорируется, чтобы
+     * не продлевать период дважды. Возвращает true, если платёж применён (новый).
+     */
+    public function registerPayment(?string $externalId, \DateTimeImmutable $paidAt, ?string $transactionId = null): bool
     {
+        if ($transactionId !== null && $transactionId === $this->lastPaymentTransactionId) {
+            return false;
+        }
+
         if ($externalId !== null) {
             $this->externalId = $externalId;
         }
 
+        if ($transactionId !== null) {
+            $this->lastPaymentTransactionId = $transactionId;
+        }
+
         $this->status = SubscriptionStatusEnum::Active;
         $this->currentPeriodEnd = $paidAt->modify(self::PERIOD_LENGTH);
+        $this->touch();
+
+        return true;
+    }
+
+    /** Сменить тариф у ещё не оплаченной подписки (гость передумал до оплаты). */
+    public function changePendingTarif(TarifCodeEnum $tarifCode): void
+    {
+        if ($this->status !== SubscriptionStatusEnum::Pending) {
+            throw new \DomainException('Сменить тариф можно только у неоплаченной подписки');
+        }
+
+        $this->tarifCode = $tarifCode;
         $this->touch();
     }
 

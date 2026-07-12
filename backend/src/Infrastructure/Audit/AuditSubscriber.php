@@ -6,11 +6,15 @@ namespace App\Infrastructure\Audit;
 
 use App\Http\Security\JwtUser;
 use App\Infrastructure\Doctrine\Domain\Audit\AuditRecord;
+use App\Infrastructure\Doctrine\Domain\Loyalty\LoyaltyProgram;
+use App\Infrastructure\Doctrine\Domain\Loyalty\LoyaltyTier;
+use App\Infrastructure\Doctrine\Domain\Loyalty\StampProgram;
 use App\Infrastructure\Doctrine\Domain\Menu\MenuItem;
 use App\Infrastructure\Doctrine\Domain\Order\Order;
 use App\Infrastructure\Doctrine\Domain\PosIntegration\PosConnection;
+use App\Infrastructure\Doctrine\Domain\Promotion\Promotion;
 use App\Infrastructure\Doctrine\Domain\Subscription\Subscription;
-use App\Infrastructure\Doctrine\Domain\Users\User;
+use App\Infrastructure\Doctrine\Domain\Authorize\User\User;
 use App\Infrastructure\Doctrine\Domain\Venue\Venue;
 use App\Infrastructure\Doctrine\Domain\Workspace\Membership;
 use App\Infrastructure\Doctrine\Domain\Workspace\Workspace;
@@ -42,6 +46,10 @@ final class AuditSubscriber
         Venue::class => 'venue',
         PosConnection::class => 'pos_connection',
         MenuItem::class => 'menu_item',
+        Promotion::class => 'promotion',
+        LoyaltyProgram::class => 'loyalty_program',
+        LoyaltyTier::class => 'loyalty_tier',
+        StampProgram::class => 'stamp_program',
     ];
 
     private const SENSITIVE_FIELDS = ['password', 'apiLoginEncrypted'];

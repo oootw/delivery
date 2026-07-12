@@ -52,4 +52,12 @@ interface OrderRepositoryInterface
      * (статусы paid и дальше) — для условия «только первый заказ».
      */
     public function hasPaidOrBeyondByCustomer(int $workspaceId, int $customerId): bool;
+
+    /**
+     * Брошенные неоплаченные заказы: статус created и созданы раньше $createdBefore —
+     * для крон-истечения (освобождение слотов промо и резерва баллов).
+     *
+     * @return Order[]
+     */
+    public function findAbandonedCreated(\DateTimeImmutable $createdBefore): array;
 }

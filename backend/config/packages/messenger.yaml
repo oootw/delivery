@@ -24,3 +24,6 @@ framework:
 
             # Импорт меню из POS — в фоне
             App\Infrastructure\Messenger\MenuImport\ImportMenuMessage: async
+
+            # Отправка SMS — в фоне (не блокируем HTTP-запрос на SMS-шлюзе)
+            App\Infrastructure\Messenger\Sms\SendSmsMessage: async

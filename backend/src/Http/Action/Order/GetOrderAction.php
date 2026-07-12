@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Order;
 
-use App\Application\Order\Query\GetOrder\Fetcher as GetOrderFetcher;
-use App\Application\Order\Query\GetOrder\Query as GetOrderQuery;
+use App\Application\Order\Query\GetOrderById\GetOrderByIdFetcher;
+use App\Application\Order\Query\GetOrderById\GetOrderByIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetOrderAction extends AbstractController
 {
     public function __construct(
-        private readonly GetOrderFetcher $getOrder,
+        private readonly GetOrderByIdFetcher $getOrder,
     ) {}
 
     #[Route('/orders/{orderId}', name: 'app_get_order', methods: ['GET'], requirements: ['orderId' => '\d+'])]
@@ -27,7 +27,7 @@ class GetOrderAction extends AbstractController
             $user = $this->getUser();
 
             $order = $this->getOrder->fetch(
-                new GetOrderQuery(
+                new GetOrderByIdQuery(
                     orderId: $orderId,
                     userId: $user->claims->userId,
                 ),

@@ -19,7 +19,7 @@ class TarifRepository extends ServiceEntityRepository implements TarifRepository
     }
 
     /** @return TarifEntity[] */
-    public function getAll(): array
+    public function getAllTarifs(): array
     {
         return array_map(
             fn(Tarif $tarif) => $this->toEntity($tarif),

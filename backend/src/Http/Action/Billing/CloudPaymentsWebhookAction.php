@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Billing;
 
-use App\Application\Billing\Gateway\PaymentGatewayInterface;
-use App\Application\Order\Command\RecordOrderPayment\Command as RecordOrderPaymentCommand;
-use App\Application\Order\Command\RecordOrderPayment\Handler as RecordOrderPaymentHandler;
-use App\Application\Subscription\Command\MarkSubscriptionPastDue\Command as MarkPastDueCommand;
-use App\Application\Subscription\Command\MarkSubscriptionPastDue\Handler as MarkPastDueHandler;
-use App\Application\Subscription\Command\RecordSubscriptionPayment\Command as RecordPaymentCommand;
-use App\Application\Subscription\Command\RecordSubscriptionPayment\Handler as RecordPaymentHandler;
-use App\Application\Subscription\Command\StopSubscription\Command as StopSubscriptionCommand;
-use App\Application\Subscription\Command\StopSubscription\Handler as StopSubscriptionHandler;
+use App\Shared\Contract\Payment\PaymentGateway\PaymentGatewayInterface;
+use App\Application\Order\Command\RecordOrderPayment\RecordOrderPaymentCommand;
+use App\Application\Order\Command\RecordOrderPayment\RecordOrderPaymentHandler;
+use App\Application\Subscription\Command\MarkSubscriptionPastDue\MarkSubscriptionPastDueCommand as MarkPastDueCommand;
+use App\Application\Subscription\Command\MarkSubscriptionPastDue\MarkSubscriptionPastDueHandler as MarkPastDueHandler;
+use App\Application\Subscription\Command\RecordSubscriptionPayment\RecordSubscriptionPaymentCommand as RecordPaymentCommand;
+use App\Application\Subscription\Command\RecordSubscriptionPayment\RecordSubscriptionPaymentHandler as RecordPaymentHandler;
+use App\Application\Subscription\Command\StopSubscription\StopSubscriptionCommand;
+use App\Application\Subscription\Command\StopSubscription\StopSubscriptionHandler;
 use App\Shared\Service\LoggerService\LoggerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -105,6 +105,7 @@ class CloudPaymentsWebhookAction extends AbstractController
                 invoiceId: $payload['InvoiceId'] ?? null,
                 externalId: $payload['SubscriptionId'] ?? null,
                 paidAt: $paidAt,
+                transactionId: isset($payload['TransactionId']) ? (string) $payload['TransactionId'] : null,
             ),
         );
     }

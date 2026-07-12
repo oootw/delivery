@@ -58,7 +58,7 @@ class PosConnectionRepository extends ServiceEntityRepository implements PosConn
         return $record !== null ? $this->toEntity($record) : null;
     }
 
-    public function findByVenue(int $venueId): ?PosConnectionEntity
+    public function findByVenueId(int $venueId): ?PosConnectionEntity
     {
         $record = $this->findOneBy(['venueId' => $venueId]);
 

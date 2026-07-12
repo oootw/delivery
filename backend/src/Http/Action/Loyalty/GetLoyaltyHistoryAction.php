@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Loyalty;
 
-use App\Application\Loyalty\Query\GetLoyaltyHistory\Fetcher as GetLoyaltyHistoryFetcher;
-use App\Application\Loyalty\Query\GetLoyaltyHistory\Query as GetLoyaltyHistoryQuery;
+use App\Application\Loyalty\Query\GetLoyaltyHistoryByCustomerId\GetLoyaltyHistoryByCustomerIdFetcher;
+use App\Application\Loyalty\Query\GetLoyaltyHistoryByCustomerId\GetLoyaltyHistoryByCustomerIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -19,7 +19,7 @@ use Webmozart\Assert\Assert;
 class GetLoyaltyHistoryAction extends AbstractController
 {
     public function __construct(
-        private readonly GetLoyaltyHistoryFetcher $getLoyaltyHistory,
+        private readonly GetLoyaltyHistoryByCustomerIdFetcher $getLoyaltyHistory,
     ) {}
 
     #[Route('/loyalty/history', name: 'app_get_loyalty_history', methods: ['GET'])]
@@ -34,7 +34,7 @@ class GetLoyaltyHistoryAction extends AbstractController
             $user = $this->getUser();
 
             $history = $this->getLoyaltyHistory->fetch(
-                new GetLoyaltyHistoryQuery(
+                new GetLoyaltyHistoryByCustomerIdQuery(
                     userId: $user->claims->userId,
                     workspaceId: (int) $workspaceId,
                     limit: (int) $request->query->get('limit', '50'),

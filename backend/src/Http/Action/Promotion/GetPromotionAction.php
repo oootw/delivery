@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Promotion;
 
-use App\Application\Promotion\Query\GetPromotion\Fetcher as GetPromotionFetcher;
-use App\Application\Promotion\Query\GetPromotion\Query as GetPromotionQuery;
+use App\Application\Promotion\Query\GetPromotionById\GetPromotionByIdFetcher;
+use App\Application\Promotion\Query\GetPromotionById\GetPromotionByIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetPromotionAction extends AbstractController
 {
     public function __construct(
-        private readonly GetPromotionFetcher $getPromotion,
+        private readonly GetPromotionByIdFetcher $getPromotion,
     ) {}
 
     #[Route('/promotions/{promotionId}', name: 'app_get_promotion', methods: ['GET'], requirements: ['promotionId' => '\d+'])]
@@ -28,7 +28,7 @@ class GetPromotionAction extends AbstractController
             $user = $this->getUser();
 
             $promotion = $this->getPromotion->fetch(
-                new GetPromotionQuery(
+                new GetPromotionByIdQuery(
                     userId: $user->claims->userId,
                     promotionId: $promotionId,
                 ),

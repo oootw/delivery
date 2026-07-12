@@ -112,6 +112,14 @@ class Venue
         $this->touch();
     }
 
+    /** Работает ли точка в указанный момент — по её недельному расписанию и таймзоне. */
+    public function isOpenAt(\DateTimeImmutable $moment): bool
+    {
+        $local = $moment->setTimezone(new \DateTimeZone($this->timezone));
+
+        return $this->workingHours->isOpenAt((int) $local->format('N'), $local->format('H:i'));
+    }
+
     public function assignId(int $id): void
     {
         $this->id = $id;

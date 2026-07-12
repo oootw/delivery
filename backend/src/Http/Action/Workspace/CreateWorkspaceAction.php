@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Workspace;
 
-use App\Application\Workspace\Command\CreateWorkspace\Command as CreateWorkspaceCommand;
-use App\Application\Workspace\Command\CreateWorkspace\Handler as CreateWorkspaceHandler;
+use App\Application\Workspace\Command\CreateWorkspace\CreateWorkspaceCommand;
+use App\Application\Workspace\Command\CreateWorkspace\CreateWorkspaceHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

@@ -44,6 +44,13 @@ class ModifierRepository extends ServiceEntityRepository implements ModifierRepo
         return $record->getId();
     }
 
+    public function findById(int $id): ?ModifierEntity
+    {
+        $record = $this->find($id);
+
+        return $record === null ? null : $this->toEntity($record);
+    }
+
     /**
      * @return ModifierEntity[]
      */
@@ -66,17 +73,19 @@ class ModifierRepository extends ServiceEntityRepository implements ModifierRepo
      */
     private function toEntities(array $records): array
     {
-        return array_map(
-            fn(Modifier $record): ModifierEntity => new ModifierEntity(
-                id: $record->getId(),
-                venueId: $record->getVenueId(),
-                externalId: $record->getExternalId(),
-                modifierGroupExternalId: $record->getModifierGroupExternalId(),
-                name: $record->getName(),
-                priceKopecks: $record->getPriceKopecks(),
-                isArchived: $record->isArchived(),
-            ),
-            $records,
+        return array_map(fn(Modifier $record): ModifierEntity => $this->toEntity($record), $records);
+    }
+
+    private function toEntity(Modifier $record): ModifierEntity
+    {
+        return new ModifierEntity(
+            id: $record->getId(),
+            venueId: $record->getVenueId(),
+            externalId: $record->getExternalId(),
+            modifierGroupExternalId: $record->getModifierGroupExternalId(),
+            name: $record->getName(),
+            priceKopecks: $record->getPriceKopecks(),
+            isArchived: $record->isArchived(),
         );
     }
 }

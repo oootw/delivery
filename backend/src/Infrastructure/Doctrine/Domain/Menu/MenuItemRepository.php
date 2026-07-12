@@ -6,6 +6,7 @@ namespace App\Infrastructure\Doctrine\Domain\Menu;
 
 use App\Application\Menu\Entity\MenuItem\MenuItem as MenuItemEntity;
 use App\Application\Menu\Entity\MenuItem\MenuItemRepositoryInterface;
+use App\Application\Menu\Nutrition\Nutrition;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -40,6 +41,7 @@ class MenuItemRepository extends ServiceEntityRepository implements MenuItemRepo
         $record->setPosition($item->position);
         $record->setModifierGroupExternalIds($item->modifierGroupExternalIds);
         $record->setIsArchived($item->isArchived);
+        $record->setPosNutrition($item->posNutrition?->toArray());
 
         $this->getEntityManager()->persist($record);
         $this->getEntityManager()->flush();
@@ -98,6 +100,9 @@ class MenuItemRepository extends ServiceEntityRepository implements MenuItemRepo
             position: $record->getPosition(),
             modifierGroupExternalIds: $record->getModifierGroupExternalIds(),
             isArchived: $record->isArchived(),
+            posNutrition: $record->getPosNutrition() !== null
+                ? Nutrition::fromArray($record->getPosNutrition())
+                : null,
         );
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Subscription;
 
-use App\Application\Subscription\Query\GetCurrentSubscription\Fetcher as GetCurrentSubscriptionFetcher;
-use App\Application\Subscription\Query\GetCurrentSubscription\Query as GetCurrentSubscriptionQuery;
+use App\Application\Subscription\Query\GetCurrentSubscriptionByUserId\GetCurrentSubscriptionByUserIdFetcher;
+use App\Application\Subscription\Query\GetCurrentSubscriptionByUserId\GetCurrentSubscriptionByUserIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetSubscriptionAction extends AbstractController
 {
     public function __construct(
-        private readonly GetCurrentSubscriptionFetcher $getCurrentSubscription,
+        private readonly GetCurrentSubscriptionByUserIdFetcher $getCurrentSubscription,
     ) {}
 
     #[Route('/subscriptions/current', name: 'app_get_current_subscription', methods: ['GET'])]
@@ -28,7 +28,7 @@ class GetSubscriptionAction extends AbstractController
             $user = $this->getUser();
 
             $subscription = $this->getCurrentSubscription->fetch(
-                new GetCurrentSubscriptionQuery(userId: $user->claims->userId),
+                new GetCurrentSubscriptionByUserIdQuery(userId: $user->claims->userId),
             );
 
             if ($subscription === null) {

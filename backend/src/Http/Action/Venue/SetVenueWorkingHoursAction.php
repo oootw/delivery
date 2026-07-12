@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Venue;
 
-use App\Application\Venue\Command\SetVenueWorkingHours\Command as SetVenueWorkingHoursCommand;
-use App\Application\Venue\Command\SetVenueWorkingHours\Handler as SetVenueWorkingHoursHandler;
+use App\Application\Venue\Command\SetVenueWorkingHours\SetVenueWorkingHoursCommand;
+use App\Application\Venue\Command\SetVenueWorkingHours\SetVenueWorkingHoursHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

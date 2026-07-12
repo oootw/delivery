@@ -40,7 +40,7 @@ final class WaitTimeRecalculator implements WaitTimeRecalculatorInterface
             return;
         }
 
-        $profile = $this->kitchenProfiles->findByVenue($venueId) ?? KitchenProfile::buildDefault($venueId);
+        $profile = $this->kitchenProfiles->findByVenueId($venueId) ?? KitchenProfile::buildDefault($venueId);
         $historicalPerUnit = $this->kitchenHistory->averagePerUnitMinutes($venueId);
 
         foreach ($activeOrders as $order) {

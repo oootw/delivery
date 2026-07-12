@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\CloudPayments;
 
-use App\Application\Billing\Gateway\PaymentGatewayInterface;
+use App\Shared\Contract\Payment\PaymentGateway\PaymentGatewayInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**

@@ -45,7 +45,7 @@ class KitchenProfileRepository extends ServiceEntityRepository implements Kitche
         return $record->getId();
     }
 
-    public function findByVenue(int $venueId): ?KitchenProfileEntity
+    public function findByVenueId(int $venueId): ?KitchenProfileEntity
     {
         $record = $this->findOneBy(['venueId' => $venueId]);
 

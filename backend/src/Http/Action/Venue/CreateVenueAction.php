@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Venue;
 
-use App\Application\Venue\Command\CreateVenue\Command as CreateVenueCommand;
-use App\Application\Venue\Command\CreateVenue\Handler as CreateVenueHandler;
+use App\Application\Venue\Command\CreateVenue\CreateVenueCommand;
+use App\Application\Venue\Command\CreateVenue\CreateVenueHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

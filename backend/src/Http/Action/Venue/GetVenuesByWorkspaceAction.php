@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Venue;
 
-use App\Application\Venue\Query\GetVenuesByWorkspace\Fetcher as GetVenuesByWorkspaceFetcher;
-use App\Application\Venue\Query\GetVenuesByWorkspace\Query as GetVenuesByWorkspaceQuery;
+use App\Application\Venue\Query\GetVenuesByWorkspaceId\GetVenuesByWorkspaceIdFetcher;
+use App\Application\Venue\Query\GetVenuesByWorkspaceId\GetVenuesByWorkspaceIdQuery;
 use App\Application\Venue\Query\VenueView;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetVenuesByWorkspaceAction extends AbstractController
 {
     public function __construct(
-        private readonly GetVenuesByWorkspaceFetcher $getVenuesByWorkspace,
+        private readonly GetVenuesByWorkspaceIdFetcher $getVenuesByWorkspace,
     ) {}
 
     #[Route('/workspaces/{workspaceId}/venues', name: 'app_get_venues_by_workspace', methods: ['GET'], requirements: ['workspaceId' => '\d+'])]
@@ -29,7 +29,7 @@ class GetVenuesByWorkspaceAction extends AbstractController
             $user = $this->getUser();
 
             $venues = $this->getVenuesByWorkspace->fetch(
-                new GetVenuesByWorkspaceQuery(
+                new GetVenuesByWorkspaceIdQuery(
                     userId: $user->claims->userId,
                     workspaceId: $workspaceId,
                 ),

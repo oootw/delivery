@@ -9,7 +9,7 @@ interface TarifRepositoryInterface
     /**
      * @return Tarif[]
      */
-    public function getAll(): array;
+    public function getAllTarifs(): array;
 
     public function getByTarifCode(TarifCodeEnum $tarifCode): ?Tarif;
 }

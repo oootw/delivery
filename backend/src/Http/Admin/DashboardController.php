@@ -45,6 +45,13 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(OrderCrudController::class, 'Заказы', 'fa fa-receipt');
         yield MenuItem::linkTo(SubscriptionCrudController::class, 'Подписки', 'fa fa-credit-card');
 
+        yield MenuItem::section('Лояльность и акции');
+        yield MenuItem::linkTo(PromotionCrudController::class, 'Акции и промокоды', 'fa fa-tags');
+        yield MenuItem::linkTo(LoyaltyProgramCrudController::class, 'Программы лояльности', 'fa fa-gift');
+        yield MenuItem::linkTo(LoyaltyTierCrudController::class, 'Уровни', 'fa fa-ranking-star');
+        yield MenuItem::linkTo(StampProgramCrudController::class, 'Штамп-карты', 'fa fa-stamp');
+        yield MenuItem::linkTo(LoyaltyTransactionCrudController::class, 'Леджер баллов', 'fa fa-coins');
+
         yield MenuItem::section('Клиенты и точки');
         yield MenuItem::linkTo(UserCrudController::class, 'Пользователи', 'fa fa-users');
         yield MenuItem::linkTo(WorkspaceCrudController::class, 'Воркспейсы', 'fa fa-store');

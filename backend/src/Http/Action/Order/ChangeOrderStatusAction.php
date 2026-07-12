@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Order;
 
-use App\Application\Order\Command\ChangeOrderStatus\Command as ChangeOrderStatusCommand;
-use App\Application\Order\Command\ChangeOrderStatus\Handler as ChangeOrderStatusHandler;
+use App\Application\Order\Command\ChangeOrderStatus\ChangeOrderStatusCommand;
+use App\Application\Order\Command\ChangeOrderStatus\ChangeOrderStatusHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

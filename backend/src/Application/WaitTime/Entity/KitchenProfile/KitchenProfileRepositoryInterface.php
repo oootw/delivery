@@ -8,5 +8,5 @@ interface KitchenProfileRepositoryInterface
 {
     public function save(KitchenProfile $profile): int;
 
-    public function findByVenue(int $venueId): ?KitchenProfile;
+    public function findByVenueId(int $venueId): ?KitchenProfile;
 }

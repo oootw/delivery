@@ -15,6 +15,13 @@ interface LoyaltyTransactionRepositoryInterface
      */
     public function findByAccount(int $accountId, int $limit): array;
 
+    /**
+     * Весь леджер кошелька по возрастанию времени — для FIFO-расчёта сгорания баллов.
+     *
+     * @return LoyaltyTransaction[]
+     */
+    public function findAllByAccountAsc(int $accountId): array;
+
     /** Начислялся ли уже кэшбэк за заказ — защита от повторного начисления. */
     public function existsEarnForOrder(int $orderId): bool;
 }

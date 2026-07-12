@@ -53,6 +53,10 @@ class MenuItem
     #[ORM\Column]
     private bool $isArchived;
 
+    /** @var array<string, mixed>|null */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $posNutrition = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -168,5 +172,17 @@ class MenuItem
     public function isArchived(): bool
     {
         return $this->isArchived;
+    }
+
+    /** @param array<string, mixed>|null $posNutrition */
+    public function setPosNutrition(?array $posNutrition): void
+    {
+        $this->posNutrition = $posNutrition;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getPosNutrition(): ?array
+    {
+        return $this->posNutrition;
     }
 }

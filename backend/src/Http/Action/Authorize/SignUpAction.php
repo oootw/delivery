@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Authorize;
 
-use App\Application\Authorize\Command\CreateAuthorizeTokens\Command as CreateAuthorizeTokensCommand;
-use App\Application\Authorize\Command\CreateAuthorizeTokens\Handler as CreateAuthorizeTokensHandler;
-use App\Application\Authorize\Command\CreateUser\Command as CreateUserCommand;
-use App\Application\Authorize\Command\CreateUser\Handler as CreateUserHandler;
-use App\Application\Authorize\Query\FindUserByPhone\Fetcher as FindUserByPhoneFetcher;
-use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Application\Authorize\Command\CreateAuthorizeTokens\CreateAuthorizeTokensCommand;
+use App\Application\Authorize\Command\CreateAuthorizeTokens\CreateAuthorizeTokensHandler;
+use App\Application\Authorize\Command\CreateUser\CreateUserCommand;
+use App\Application\Authorize\Command\CreateUser\CreateUserHandler;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneFetcher;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneQuery;
 use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;

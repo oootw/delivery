@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Promotion;
 
-use App\Application\Promotion\Query\GetPromotions\Fetcher as GetPromotionsFetcher;
-use App\Application\Promotion\Query\GetPromotions\Query as GetPromotionsQuery;
+use App\Application\Promotion\Query\GetPromotionsByWorkspaceId\GetPromotionsByWorkspaceIdFetcher;
+use App\Application\Promotion\Query\GetPromotionsByWorkspaceId\GetPromotionsByWorkspaceIdQuery;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;
@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetPromotionsAction extends AbstractController
 {
     public function __construct(
-        private readonly GetPromotionsFetcher $getPromotions,
+        private readonly GetPromotionsByWorkspaceIdFetcher $getPromotions,
     ) {}
 
     #[Route('/workspaces/{workspaceId}/promotions', name: 'app_get_promotions', methods: ['GET'], requirements: ['workspaceId' => '\d+'])]
@@ -28,7 +28,7 @@ class GetPromotionsAction extends AbstractController
             $user = $this->getUser();
 
             $promotions = $this->getPromotions->fetch(
-                new GetPromotionsQuery(
+                new GetPromotionsByWorkspaceIdQuery(
                     userId: $user->claims->userId,
                     workspaceId: $workspaceId,
                 ),

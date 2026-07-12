@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Authorize;
 
-use App\Application\Authorize\Command\CheckOntimeCode\Command as CheckOntimeCodeCommand;
-use App\Application\Authorize\Command\CheckOntimeCode\Handler as CheckOntimeCodeHandler;
-use App\Application\Authorize\Command\CreateAuthorizeTokens\Command as CreateAuthorizeTokensCommand;
-use App\Application\Authorize\Command\CreateAuthorizeTokens\Handler as CreateAuthorizeTokensHandler;
+use App\Application\Authorize\Command\CheckOntimeCode\CheckOntimeCodeCommand;
+use App\Application\Authorize\Command\CheckOntimeCode\CheckOntimeCodeHandler;
+use App\Application\Authorize\Command\CreateAuthorizeTokens\CreateAuthorizeTokensCommand;
+use App\Application\Authorize\Command\CreateAuthorizeTokens\CreateAuthorizeTokensHandler;
 use App\Application\Authorize\Entity\Code\CodeTypeEnum;
-use App\Application\Authorize\Query\FindUserByPhone\Fetcher;
-use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneFetcher;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneQuery;
 use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
@@ -23,7 +23,7 @@ use Webmozart\Assert\Assert;
 class AuthorizeAction extends AbstractController
 {
     public function __construct(
-        private readonly Fetcher $findUserByPhone,
+        private readonly FindUserByPhoneFetcher $findUserByPhone,
         private readonly CheckOntimeCodeHandler $checkOntimeCode,
         private readonly CreateAuthorizeTokensHandler $createAuthorizeTokens,
     ) {}
@@ -44,8 +44,8 @@ class AuthorizeAction extends AbstractController
                 new FindUserByPhoneQuery(phone: $phone),
             );
 
-            Assert::notNull($user, 'Пользователь не найден');
-
+            // Проверяем код единообразно для любого номера (для незарегистрированного
+            // существует decoy-код). При неверном коде летит \DomainException.
             $this->checkOntimeCode->handle(
                 new CheckOntimeCodeCommand(
                     phone: $phone,
@@ -53,6 +53,12 @@ class AuthorizeAction extends AbstractController
                     codeType: CodeTypeEnum::Authorize->value,
                 ),
             );
+
+            // Сюда доходим только с верным кодом. Незарегистрированный номер не
+            // раскрываем — тот же ответ, что на неверный код (enumeration).
+            if ($user === null) {
+                throw new \DomainException('Неверный код');
+            }
 
             $tokens = $this->createAuthorizeTokens->handle(
                 new CreateAuthorizeTokensCommand(
@@ -68,7 +74,7 @@ class AuthorizeAction extends AbstractController
                 'refresh_token' => $tokens->refreshToken,
                 'expires_in' => $tokens->expiresIn,
             ]);
-        } catch (InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException | \DomainException $exception) {
             return ApiResponse::error($exception->getMessage());
         } catch (\Throwable $exception) {
             LoggerService::toFile(

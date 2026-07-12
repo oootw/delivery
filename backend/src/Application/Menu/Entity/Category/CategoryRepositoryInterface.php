@@ -8,6 +8,8 @@ interface CategoryRepositoryInterface
 {
     public function save(Category $category): int;
 
+    public function findById(int $id): ?Category;
+
     /**
      * @return Category[]
      */

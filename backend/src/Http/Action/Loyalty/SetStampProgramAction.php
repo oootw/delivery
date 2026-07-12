@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Loyalty;
 
-use App\Application\Loyalty\Command\SetStampProgram\Command as SetStampProgramCommand;
-use App\Application\Loyalty\Command\SetStampProgram\Handler as SetStampProgramHandler;
+use App\Application\Loyalty\Command\SetStampProgram\SetStampProgramCommand;
+use App\Application\Loyalty\Command\SetStampProgram\SetStampProgramHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

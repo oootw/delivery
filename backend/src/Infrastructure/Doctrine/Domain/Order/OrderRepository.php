@@ -147,6 +147,21 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
         return array_map(static fn(array $row): int => (int) $row['venueId'], $rows);
     }
 
+    public function findAbandonedCreated(\DateTimeImmutable $createdBefore): array
+    {
+        return array_map(
+            fn(Order $record): OrderEntity => $this->toEntity($record),
+            $this->createQueryBuilder('o')
+                ->where('o.status = :status')
+                ->andWhere('o.createdAt < :createdBefore')
+                ->setParameter('status', OrderStatusEnum::Created)
+                ->setParameter('createdBefore', $createdBefore)
+                ->orderBy('o.createdAt', 'ASC')
+                ->getQuery()
+                ->getResult(),
+        );
+    }
+
     public function hasPaidOrBeyondByCustomer(int $workspaceId, int $customerId): bool
     {
         $statuses = [...self::IN_PROGRESS_STATUSES, OrderStatusEnum::Completed];

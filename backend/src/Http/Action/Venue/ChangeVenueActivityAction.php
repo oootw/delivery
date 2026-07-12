@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Venue;
 
-use App\Application\Venue\Command\ChangeVenueActivity\Command as ChangeVenueActivityCommand;
-use App\Application\Venue\Command\ChangeVenueActivity\Handler as ChangeVenueActivityHandler;
+use App\Application\Venue\Command\ChangeVenueActivity\ChangeVenueActivityCommand;
+use App\Application\Venue\Command\ChangeVenueActivity\ChangeVenueActivityHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

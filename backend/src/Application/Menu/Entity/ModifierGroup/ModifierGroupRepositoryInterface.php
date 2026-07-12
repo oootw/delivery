@@ -8,6 +8,8 @@ interface ModifierGroupRepositoryInterface
 {
     public function save(ModifierGroup $group): int;
 
+    public function findById(int $id): ?ModifierGroup;
+
     /**
      * @return ModifierGroup[]
      */

@@ -7,6 +7,9 @@ namespace App\Infrastructure\Doctrine\Domain\Loyalty;
 use App\Application\Loyalty\Entity\Transaction\LoyaltyTransactionTypeEnum;
 use Doctrine\ORM\Mapping as ORM;
 
+// Партиальный уникальный индекс uniq_loyalty_earn_per_order (order_id) WHERE type='earn'
+// живёт в миграции Version20260711140000 — атрибутами ORM он не выражается. Он гарантирует
+// единственное начисление на заказ (идемпотентность accrueOnCompleted при гонке).
 #[ORM\Entity(repositoryClass: LoyaltyTransactionRepository::class)]
 #[ORM\Table(name: 'loyalty_transaction')]
 #[ORM\Index(name: 'idx_loyalty_transaction_account', columns: ['account_id'])]

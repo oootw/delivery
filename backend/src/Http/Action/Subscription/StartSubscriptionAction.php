@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Subscription;
 
-use App\Application\Subscription\Command\StartSubscription\Command as StartSubscriptionCommand;
-use App\Application\Subscription\Command\StartSubscription\Handler as StartSubscriptionHandler;
+use App\Application\Subscription\Command\StartSubscription\StartSubscriptionCommand;
+use App\Application\Subscription\Command\StartSubscription\StartSubscriptionHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

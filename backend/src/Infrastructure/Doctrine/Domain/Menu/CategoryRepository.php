@@ -43,6 +43,13 @@ class CategoryRepository extends ServiceEntityRepository implements CategoryRepo
         return $record->getId();
     }
 
+    public function findById(int $id): ?CategoryEntity
+    {
+        $record = $this->find($id);
+
+        return $record === null ? null : $this->toEntity($record);
+    }
+
     /**
      * @return CategoryEntity[]
      */
@@ -67,16 +74,18 @@ class CategoryRepository extends ServiceEntityRepository implements CategoryRepo
      */
     private function toEntities(array $records): array
     {
-        return array_map(
-            fn(Category $record): CategoryEntity => new CategoryEntity(
-                id: $record->getId(),
-                venueId: $record->getVenueId(),
-                externalId: $record->getExternalId(),
-                name: $record->getName(),
-                position: $record->getPosition(),
-                isArchived: $record->isArchived(),
-            ),
-            $records,
+        return array_map(fn(Category $record): CategoryEntity => $this->toEntity($record), $records);
+    }
+
+    private function toEntity(Category $record): CategoryEntity
+    {
+        return new CategoryEntity(
+            id: $record->getId(),
+            venueId: $record->getVenueId(),
+            externalId: $record->getExternalId(),
+            name: $record->getName(),
+            position: $record->getPosition(),
+            isArchived: $record->isArchived(),
         );
     }
 }

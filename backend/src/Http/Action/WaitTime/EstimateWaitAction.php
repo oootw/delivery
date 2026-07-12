@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\WaitTime;
 
-use App\Application\WaitTime\Query\EstimateWait\Fetcher as EstimateWaitFetcher;
-use App\Application\WaitTime\Query\EstimateWait\Query as EstimateWaitQuery;
+use App\Application\WaitTime\Query\EstimateWait\EstimateWaitFetcher;
+use App\Application\WaitTime\Query\EstimateWait\EstimateWaitQuery;
 use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

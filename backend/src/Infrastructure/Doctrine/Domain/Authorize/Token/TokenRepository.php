@@ -7,7 +7,7 @@ namespace App\Infrastructure\Doctrine\Domain\Authorize\Token;
 use App\Application\Authorize\Entity\Token\Token;
 use App\Application\Authorize\Entity\Token\TokenRepositoryInterface;
 use App\Infrastructure\Doctrine\Domain\Authorize\Token\Token as AuthorizeToken;
-use App\Infrastructure\Doctrine\Domain\Users\User;
+use App\Infrastructure\Doctrine\Domain\Authorize\User\User;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;

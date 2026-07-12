@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Authorize;
 
-use App\Application\Authorize\Command\Logout\Command as LogoutCommand;
-use App\Application\Authorize\Command\Logout\Handler as LogoutHandler;
-use App\Application\Authorize\Query\FindUserByPhone\Fetcher as FindUserByPhoneFetcher;
-use App\Application\Authorize\Query\FindUserByPhone\Query as FindUserByPhoneQuery;
+use App\Application\Authorize\Command\Logout\LogoutCommand;
+use App\Application\Authorize\Command\Logout\LogoutHandler;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneFetcher;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneQuery;
 use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;

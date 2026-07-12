@@ -17,8 +17,11 @@ parameters:
     cloudpayments.public_id: '%env(CLOUDPAYMENTS_PUBLIC_ID)%'
     cloudpayments.api_secret: '%env(CLOUDPAYMENTS_API_SECRET)%'
     cloudpayments.api_url: '%env(CLOUDPAYMENTS_API_URL)%'
+    yookassa.api_url: '%env(YOOKASSA_API_URL)%'
     pos.secret_key: '%env(APP_POS_SECRET_KEY)%'
     iiko.api_url: '%env(IIKO_API_URL)%'
+    upload.root_dir: '%kernel.project_dir%/public/upload'
+    upload.url_prefix: '/upload'
 
 services:
     # default configuration for services in *this* file
@@ -61,15 +64,24 @@ services:
             $apiSecret: '%cloudpayments.api_secret%'
             $apiUrl: '%cloudpayments.api_url%'
 
-    App\Application\Billing\Gateway\PaymentGatewayInterface: '@App\Infrastructure\CloudPayments\CloudPaymentsGateway'
+    App\Shared\Contract\Payment\PaymentGateway\PaymentGatewayInterface: '@App\Infrastructure\CloudPayments\CloudPaymentsGateway'
 
     App\Http\Action\Subscription\StartSubscriptionAction:
         arguments:
             $cloudPaymentsPublicId: '%cloudpayments.public_id%'
 
-    App\Http\Action\Order\PlaceOrderAction:
+    App\Infrastructure\Payment\WorkspaceOrderPaymentGatewayFactory:
         arguments:
-            $cloudPaymentsPublicId: '%cloudpayments.public_id%'
+            $platformCloudPaymentsPublicId: '%cloudpayments.public_id%'
+            $yooKassaApiUrl: '%yookassa.api_url%'
+
+    App\Shared\Contract\Payment\OrderPaymentGateway\OrderPaymentGatewayResolverInterface: '@App\Infrastructure\Payment\WorkspaceOrderPaymentGatewayFactory'
+
+    App\Infrastructure\YooKassa\YooKassaPaymentStatusResolver:
+        arguments:
+            $yooKassaApiUrl: '%yookassa.api_url%'
+
+    App\Shared\Contract\Payment\OrderPaymentGateway\OrderPaymentStatusResolverInterface: '@App\Infrastructure\YooKassa\YooKassaPaymentStatusResolver'
 
     App\Application\Order\Realtime\OrderRealtimeNotifierInterface: '@App\Infrastructure\Mercure\MercureOrderNotifier'
 
@@ -78,6 +90,33 @@ services:
     App\Application\Order\Pricing\OrderPricingInterface: '@App\Application\Promotion\Service\PromotionPricing'
 
     App\Application\Order\Rewards\OrderRewardsInterface: '@App\Application\Loyalty\Service\OrderRewards'
+
+    App\Infrastructure\Storage\VenueLogoStorage:
+        arguments:
+            $uploadRootDir: '%upload.root_dir%'
+            $uploadUrlPrefix: '%upload.url_prefix%'
+
+    App\Application\Venue\Logo\VenueLogoStorageInterface: '@App\Infrastructure\Storage\VenueLogoStorage'
+
+    App\Infrastructure\Storage\MenuImageStorage:
+        arguments:
+            $uploadRootDir: '%upload.root_dir%'
+            $uploadUrlPrefix: '%upload.url_prefix%'
+
+    App\Application\Menu\Image\MenuImageStorageInterface: '@App\Infrastructure\Storage\MenuImageStorage'
+
+    App\Infrastructure\Storage\PromotionBannerStorage:
+        arguments:
+            $uploadRootDir: '%upload.root_dir%'
+            $uploadUrlPrefix: '%upload.url_prefix%'
+
+    App\Application\Promotion\Banner\PromotionBannerStorageInterface: '@App\Infrastructure\Storage\PromotionBannerStorage'
+
+    App\Shared\Transaction\TransactionInterface: '@App\Infrastructure\Doctrine\Transaction\DoctrineTransaction'
+
+    App\Application\Authorize\Gateway\SmsSenderInterface: '@App\Infrastructure\Messenger\Sms\QueuedSmsSender'
+
+    App\Application\Authorize\Security\PasswordHasherInterface: '@App\Infrastructure\Security\AdminPasswordHasher'
 
     App\Shared\Service\Crypto\SecretCipher:
         arguments:

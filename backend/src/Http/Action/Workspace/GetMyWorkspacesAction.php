@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Workspace;
 
-use App\Application\Workspace\Query\GetMyWorkspaces\Fetcher as GetMyWorkspacesFetcher;
-use App\Application\Workspace\Query\GetMyWorkspaces\Query as GetMyWorkspacesQuery;
+use App\Application\Workspace\Query\GetWorkspacesByMemberUserId\GetWorkspacesByMemberUserIdFetcher;
+use App\Application\Workspace\Query\GetWorkspacesByMemberUserId\GetWorkspacesByMemberUserIdQuery;
 use App\Application\Workspace\Query\GetMyWorkspaces\WorkspaceDTO;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GetMyWorkspacesAction extends AbstractController
 {
     public function __construct(
-        private readonly GetMyWorkspacesFetcher $getMyWorkspaces,
+        private readonly GetWorkspacesByMemberUserIdFetcher $getMyWorkspaces,
     ) {}
 
     #[Route('/workspaces', name: 'app_get_my_workspaces', methods: ['GET'])]
@@ -29,7 +29,7 @@ class GetMyWorkspacesAction extends AbstractController
             $user = $this->getUser();
 
             $workspaces = $this->getMyWorkspaces->fetch(
-                new GetMyWorkspacesQuery(userId: $user->claims->userId),
+                new GetWorkspacesByMemberUserIdQuery(userId: $user->claims->userId),
             );
 
             return ApiResponse::success([

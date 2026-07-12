@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Authorize;
 
-use App\Application\Authorize\Command\CreateAuthorizeCode\Command;
-use App\Application\Authorize\Command\CreateAuthorizeCode\Handler;
+use App\Application\Authorize\Command\CreateAuthorizeCode\CreateAuthorizeCodeCommand;
+use App\Application\Authorize\Command\CreateAuthorizeCode\CreateAuthorizeCodeHandler;
 use App\Application\Authorize\Entity\Code\CodeTypeEnum;
-use App\Application\Authorize\Query\FindUserByPhone\Fetcher;
-use App\Application\Authorize\Query\GetSmsCode\Fetcher as GetSmsCodeFetcher;
-use App\Application\Authorize\Query\GetSmsCodeSendAvailable\Fetcher as GetSmsCodeSendAvailableFetcher;
+use App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneFetcher;
+use App\Application\Authorize\Query\GetSmsCode\GetSmsCodeFetcher;
+use App\Application\Authorize\Query\GetSmsCodeSendAvailable\GetSmsCodeSendAvailableFetcher;
+use App\Application\Authorize\Query\GetSmsDailyLimitAvailable\GetSmsDailyLimitAvailableFetcher;
 use App\Http\Response\ApiResponse;
 use App\Shared\Service\LoggerService\LoggerService;
 use InvalidArgumentException;
@@ -22,9 +23,10 @@ use Webmozart\Assert\Assert;
 class GetAuthCodeAction extends AbstractController
 {
     public function __construct(
-        private readonly Fetcher $findUserByPhone,
+        private readonly FindUserByPhoneFetcher $findUserByPhone,
         private readonly GetSmsCodeSendAvailableFetcher $getSmsCodeSendAvailable,
-        private readonly Handler $createAuthorizeCode,
+        private readonly GetSmsDailyLimitAvailableFetcher $getSmsDailyLimitAvailable,
+        private readonly CreateAuthorizeCodeHandler $createAuthorizeCode,
         private readonly GetSmsCodeFetcher $getSmsCode,
     ) {}
 
@@ -41,16 +43,20 @@ class GetAuthCodeAction extends AbstractController
             Assert::notEmpty($codeType, 'Укажите тип кода');
             Assert::eq($codeType, CodeTypeEnum::Register->value, 'Недопустимый тип кода');
 
-            $user = $this->findUserByPhone->fetch(
-                new \App\Application\Authorize\Query\FindUserByPhone\Query(
+            // Лимит и кулдаун проверяем по номеру ДО ветвления по пользователю, а код
+            // выпускаем всегда (для незарегистрированного — decoy без SMS). Так лимит,
+            // кулдаун и тайминг одинаковы независимо от регистрации — эндпоинт не работает
+            // оракулом существования аккаунта (enumeration).
+            $isUnderDailyLimit = $this->getSmsDailyLimitAvailable->fetch(
+                new \App\Application\Authorize\Query\GetSmsDailyLimitAvailable\GetSmsDailyLimitAvailableQuery(
                     phone: $phone,
                 )
             );
 
-            Assert::notNull($user, 'Пользователь не найден');
+            Assert::true($isUnderDailyLimit, 'Превышен суточный лимит запросов кода');
 
             $isCodeSendAvailable = $this->getSmsCodeSendAvailable->fetch(
-                new \App\Application\Authorize\Query\GetSmsCodeSendAvailable\Query(
+                new \App\Application\Authorize\Query\GetSmsCodeSendAvailable\GetSmsCodeSendAvailableQuery(
                     phone: $phone,
                 )
             );
@@ -58,18 +64,28 @@ class GetAuthCodeAction extends AbstractController
             Assert::true($isCodeSendAvailable, 'Код уже отправлен');
 
             $authorizeCode = $this->createAuthorizeCode->handle(
-                new Command(
+                new CreateAuthorizeCodeCommand(
                     phone: $phone,
                     codeType: $codeType,
                 )
             );
 
-            $this->getSmsCode->fetch(
-                new \App\Application\Authorize\Query\GetSmsCode\Query(
+            $user = $this->findUserByPhone->fetch(
+                new \App\Application\Authorize\Query\FindUserByPhone\FindUserByPhoneQuery(
                     phone: $phone,
-                    message: 'Ваш код для авторизации: ' . $authorizeCode->code,
                 )
             );
+
+            // SMS уходит только зарегистрированному номеру. Незарегистрированному код
+            // выпущен (decoy для единообразия лимита/кулдауна), но не отправляется.
+            if ($user !== null) {
+                $this->getSmsCode->fetch(
+                    new \App\Application\Authorize\Query\GetSmsCode\GetSmsCodeQuery(
+                        phone: $phone,
+                        message: 'Ваш код для авторизации: ' . $authorizeCode->code,
+                    )
+                );
+            }
 
             return ApiResponse::success();
         } catch (InvalidArgumentException $exception) {

@@ -38,6 +38,9 @@ class Subscription
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $currentPeriodEnd = null;
 
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $lastPaymentTransactionId = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -107,6 +110,16 @@ class Subscription
     public function setCurrentPeriodEnd(?\DateTimeImmutable $currentPeriodEnd): void
     {
         $this->currentPeriodEnd = $currentPeriodEnd;
+    }
+
+    public function getLastPaymentTransactionId(): ?string
+    {
+        return $this->lastPaymentTransactionId;
+    }
+
+    public function setLastPaymentTransactionId(?string $lastPaymentTransactionId): void
+    {
+        $this->lastPaymentTransactionId = $lastPaymentTransactionId;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

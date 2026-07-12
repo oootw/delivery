@@ -50,6 +50,8 @@ class PromotionRepository extends ServiceEntityRepository implements PromotionRe
         $record->setIsActive($promotion->isActive);
         $record->setCreatedAt($promotion->createdAt);
         $record->setUpdatedAt($promotion->updatedAt);
+        $record->setBannerTitle($promotion->bannerTitle);
+        $record->setBannerText($promotion->bannerText);
 
         $this->getEntityManager()->persist($record);
         $this->getEntityManager()->flush();
@@ -205,6 +207,8 @@ class PromotionRepository extends ServiceEntityRepository implements PromotionRe
             isActive: $record->isActive(),
             createdAt: $record->getCreatedAt(),
             updatedAt: $record->getUpdatedAt(),
+            bannerTitle: $record->getBannerTitle(),
+            bannerText: $record->getBannerText(),
         );
     }
 }

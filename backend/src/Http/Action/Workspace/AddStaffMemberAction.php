@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\Workspace;
 
-use App\Application\Workspace\Command\AddStaffMember\Command as AddStaffMemberCommand;
-use App\Application\Workspace\Command\AddStaffMember\Handler as AddStaffMemberHandler;
+use App\Application\Workspace\Command\AddStaffMember\AddStaffMemberCommand;
+use App\Application\Workspace\Command\AddStaffMember\AddStaffMemberHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

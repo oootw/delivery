@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Action\WaitTime;
 
-use App\Application\WaitTime\Command\SetKitchenProfile\Command as SetKitchenProfileCommand;
-use App\Application\WaitTime\Command\SetKitchenProfile\Handler as SetKitchenProfileHandler;
+use App\Application\WaitTime\Command\SetKitchenProfile\SetKitchenProfileCommand;
+use App\Application\WaitTime\Command\SetKitchenProfile\SetKitchenProfileHandler;
 use App\Http\Response\ApiResponse;
 use App\Http\Security\JwtUser;
 use App\Shared\Service\LoggerService\LoggerService;

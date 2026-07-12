@@ -76,9 +76,35 @@ class Promotion
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $bannerTitle = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $bannerText = null;
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getBannerTitle(): ?string
+    {
+        return $this->bannerTitle;
+    }
+
+    public function setBannerTitle(?string $bannerTitle): void
+    {
+        $this->bannerTitle = $bannerTitle;
+    }
+
+    public function getBannerText(): ?string
+    {
+        return $this->bannerText;
+    }
+
+    public function setBannerText(?string $bannerText): void
+    {
+        $this->bannerText = $bannerText;
     }
 
     public function getWorkspaceId(): int

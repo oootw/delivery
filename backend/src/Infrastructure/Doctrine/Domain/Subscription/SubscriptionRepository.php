@@ -36,6 +36,7 @@ class SubscriptionRepository extends ServiceEntityRepository implements Subscrip
         $record->setInvoiceId($subscription->invoiceId);
         $record->setExternalId($subscription->externalId);
         $record->setCurrentPeriodEnd($subscription->currentPeriodEnd);
+        $record->setLastPaymentTransactionId($subscription->lastPaymentTransactionId);
         $record->setCreatedAt($subscription->createdAt);
         $record->setUpdatedAt($subscription->updatedAt);
 
@@ -78,11 +79,36 @@ class SubscriptionRepository extends ServiceEntityRepository implements Subscrip
         return $record !== null ? $this->toEntity($record) : null;
     }
 
+    public function findPendingByUser(int $userId): ?SubscriptionEntity
+    {
+        $record = $this->findOneBy(
+            ['userId' => $userId, 'status' => SubscriptionStatusEnum::Pending],
+            ['createdAt' => 'DESC'],
+        );
+
+        return $record !== null ? $this->toEntity($record) : null;
+    }
+
     public function findLatestByUser(int $userId): ?SubscriptionEntity
     {
         $record = $this->findOneBy(['userId' => $userId], ['createdAt' => 'DESC']);
 
         return $record !== null ? $this->toEntity($record) : null;
+    }
+
+    public function findPastDueOlderThan(\DateTimeImmutable $updatedBefore): array
+    {
+        return array_map(
+            fn(Subscription $record): SubscriptionEntity => $this->toEntity($record),
+            $this->createQueryBuilder('s')
+                ->where('s.status = :status')
+                ->andWhere('s.updatedAt < :cutoff')
+                ->setParameter('status', SubscriptionStatusEnum::PastDue)
+                ->setParameter('cutoff', $updatedBefore)
+                ->orderBy('s.updatedAt', 'ASC')
+                ->getQuery()
+                ->getResult(),
+        );
     }
 
     private function toEntity(Subscription $record): SubscriptionEntity
@@ -97,6 +123,7 @@ class SubscriptionRepository extends ServiceEntityRepository implements Subscrip
             currentPeriodEnd: $record->getCurrentPeriodEnd(),
             createdAt: $record->getCreatedAt(),
             updatedAt: $record->getUpdatedAt(),
+            lastPaymentTransactionId: $record->getLastPaymentTransactionId(),
         );
     }
 }
