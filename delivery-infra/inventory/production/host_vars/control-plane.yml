@@ -1,0 +1,4 @@
+server_domain: control.example.com
+cp_release_ref: main
+cp_contract_version: "1.0.0"
+

@@ -1,0 +1,6 @@
+owner_slug: test-owner
+owner_id: 1001
+workspace_id: 5001
+server_domain: test-owner.example.com
+custom_repo: git@github.com:oootw/delivery-custom-test-owner.git
+pinned_ref: ""

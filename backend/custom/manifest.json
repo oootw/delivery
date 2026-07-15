@@ -1,0 +1,6 @@
+{
+    "owner": "acme",
+    "core_contract": "1.0.0",
+    "modules": ["acme"],
+    "notes": "Overlay владельца Acme"
+}

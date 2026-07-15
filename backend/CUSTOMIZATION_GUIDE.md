@@ -4,6 +4,17 @@
 проверить, чего не сломать. Проектное решение и обоснование — в `backend/PLAN_CUSTOMIZATION.md`
 (ADR). Этот файл — операционный: рецепты + карта + подводные камни.
 
+## ⚠️ Статус: legacy Variant A (заморожено)
+
+Этот гайд сохранён как историческая справка. Актуальный рабочий поток кастомизации ведётся по:
+- `/home/moont/dev/delivery/PLAN_FLEET.md`
+- `/home/moont/dev/delivery/delivery-core/docs/OWNER_OVERLAY_GOLDEN_PATH.md`
+
+Ключевые отличия от актуального контура:
+- вместо `src/Custom/*` используется overlay `custom/src/*`;
+- не используется runtime-активация через `workspace_custom_module`;
+- DevX-путь: `app:custom:new` -> `app:custom:doctor` -> `app:custom:check-compat`.
+
 ## 1. Зачем это
 
 Ядро продаётся по подписке. Доработки — двух видов: **глобальные** (едут всем) и **локальные

@@ -1,0 +1,38 @@
+---
+- name: Задеплоить overlay-репозиторий для одного owner
+  hosts: dataplane
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Создать shared/custom при отсутствии
+      ansible.builtin.file:
+        path: "{{ app_root }}/shared/custom"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_group }}"
+        mode: "0755"
+
+    - name: Обновить overlay-репозиторий
+      ansible.builtin.git:
+        repo: "{{ custom_repo }}"
+        version: "{{ custom_repo_ref }}"
+        dest: "{{ app_root }}/shared/custom"
+        update: true
+        force: true
+        accept_hostkey: true
+      become: true
+      become_user: "{{ deploy_user }}"
+
+    - name: Проверить совместимость overlay с текущим core
+      ansible.builtin.command: php bin/console app:custom:check-compat
+      args:
+        chdir: "{{ app_root }}/current"
+      become: true
+      become_user: "{{ deploy_user }}"
+      changed_when: false
+
+    - name: Перезагрузить php-fpm после обновления overlay
+      ansible.builtin.service:
+        name: "php{{ php_version }}-fpm"
+        state: reloaded
+      failed_when: false

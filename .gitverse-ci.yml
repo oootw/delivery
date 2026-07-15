@@ -1,0 +1,61 @@
+stages:
+  - ci
+
+contracts_ci:
+  stage: ci
+  image: php:8.4-cli
+  script:
+    - cd delivery-contracts
+    - php tools/contract_check.php
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'
+
+control_plane_ci:
+  stage: ci
+  image: php:8.4-cli
+  before_script:
+    - apt-get update
+    - apt-get install -y git unzip libpq-dev libzip-dev
+    - docker-php-ext-install pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+  script:
+    - cd delivery-control-plane
+    - composer install --no-interaction --prefer-dist
+    - php tools/contract_compat_check.php
+    - php -l src/Http/Action/ControlPlane/RegisterServerAction.php
+    - php -l src/Http/Action/ControlPlane/GetLicenseAction.php
+    - php -l src/Http/Action/ControlPlane/HeartbeatAction.php
+    - php -l src/Http/Action/ControlPlane/CreateReleaseAction.php
+    - php -l src/Http/Action/ControlPlane/GetLatestReleaseAction.php
+    - php -l src/Http/Action/ControlPlane/RecordDeploymentAction.php
+    - php -l src/Http/Action/ControlPlane/GetServersAction.php
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'
+
+core_ci:
+  stage: ci
+  image: php:8.4-cli
+  before_script:
+    - apt-get update
+    - apt-get install -y git unzip libzip-dev
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+  script:
+    - cd delivery-core
+    - composer install --no-interaction --prefer-dist
+    - php tools/contract_compat_check.php
+    - php -l src/Infrastructure/License/ControlPlaneLicenseClient.php
+    - php -l src/Infrastructure/License/CachedLicenseProvider.php
+    - php -l src/Infrastructure/ControlPlane/ControlPlaneHeartbeatClient.php
+    - php -l src/Console/Command/LicenseRefreshCommand.php
+    - php -l src/Console/Command/SendHeartbeatCommand.php
+    - php -l src/Http/Action/System/HealthzAction.php
+    - php -l src/Http/Security/JwtTokenValidator.php
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'

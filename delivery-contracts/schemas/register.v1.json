@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://delivery/contracts/register.v1.json",
+  "title": "RegisterApiV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request",
+    "response"
+  ],
+  "properties": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_slug",
+        "domain",
+        "core_ref",
+        "contract_version"
+      ],
+      "properties": {
+        "owner_slug": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "minLength": 1 },
+        "core_ref": { "type": "string", "minLength": 1 },
+        "contract_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_id",
+        "workspace_id",
+        "server_token"
+      ],
+      "properties": {
+        "owner_id": { "type": "integer", "minimum": 1 },
+        "workspace_id": { "type": "integer", "minimum": 1 },
+        "server_token": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

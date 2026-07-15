@@ -4,6 +4,9 @@
 # Files in the packages/ subdirectory configure your dependencies.
 # See also https://symfony.com/doc/current/service_container/import.html
 
+imports:
+    - { resource: '../custom/config/services.yaml', ignore_errors: not_found }
+
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
@@ -13,7 +16,6 @@ parameters:
     jwt.secret: '%env(JWT_SECRET)%'
     jwt.access_ttl: '%env(int:JWT_ACCESS_TTL)%'
     jwt.refresh_ttl: '%env(int:JWT_REFRESH_TTL)%'
-    app.root_domain: '%env(APP_ROOT_DOMAIN)%'
     cloudpayments.public_id: '%env(CLOUDPAYMENTS_PUBLIC_ID)%'
     cloudpayments.api_secret: '%env(CLOUDPAYMENTS_API_SECRET)%'
     cloudpayments.api_url: '%env(CLOUDPAYMENTS_API_URL)%'
@@ -64,8 +66,28 @@ services:
 
     App\Http\Workspace\WorkspaceContextListener:
         arguments:
-            $rootDomain: '%app.root_domain%'
-            $devHeaderAllowed: '%kernel.debug%'
+            $workspaceId: '%env(int:WORKSPACE_ID)%'
+
+    App\Infrastructure\License\InMemoryServerLicenseRegistry:
+        arguments:
+            $registryJson: '%env(LICENSE_SERVER_REGISTRY)%'
+
+    App\Application\License\Registry\ServerLicenseRegistryInterface: '@App\Infrastructure\License\InMemoryServerLicenseRegistry'
+
+    App\Infrastructure\License\ControlPlaneLicenseClient:
+        arguments:
+            $controlPlaneUrl: '%env(CONTROL_PLANE_URL)%'
+            $serverToken: '%env(SERVER_TOKEN)%'
+
+    App\Application\License\Contract\ControlPlaneLicenseClientInterface: '@App\Infrastructure\License\ControlPlaneLicenseClient'
+
+    App\Infrastructure\License\CachedLicenseProvider:
+        arguments:
+            $cache: '@cache.app'
+            $cacheTtlSeconds: '%env(int:LICENSE_CACHE_TTL)%'
+            $graceTtlSeconds: '%env(int:LICENSE_GRACE_TTL)%'
+
+    App\Application\License\Contract\LicenseProviderInterface: '@App\Infrastructure\License\CachedLicenseProvider'
 
     App\Infrastructure\CloudPayments\CloudPaymentsGateway:
         arguments:

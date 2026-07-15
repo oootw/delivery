@@ -26,12 +26,13 @@ class GetClientBannersByVenueIdFetcher
      */
     public function fetch(GetClientBannersByVenueIdQuery $query): array
     {
-        $venue = $this->access->venueOfWorkspace($query->workspaceSlug, $query->venueId);
+        $workspace = $this->access->workspaceById($query->workspaceId);
+        $venue = $this->access->venueOfWorkspace($query->workspaceId, $query->venueId);
 
         $result = [];
 
         foreach ($this->promotions->findActiveAutomaticByVenue($venue->workspaceId, (int) $venue->id) as $promotion) {
-            $imageUrl = $this->banners->findUrl($query->workspaceSlug, (int) $promotion->id);
+            $imageUrl = $this->banners->findUrl($workspace->slug, (int) $promotion->id);
 
             if ($imageUrl === null) {
                 continue;

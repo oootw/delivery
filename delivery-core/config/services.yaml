@@ -1,0 +1,47 @@
+parameters:
+    app.core_ref: '%env(default:unknown:CORE_REF)%'
+    app.core_contract_version: '%env(default:1.0.0:CORE_CONTRACT_VERSION)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+    App\Infrastructure\License\ControlPlaneLicenseClient:
+        arguments:
+            $controlPlaneUrl: '%env(CONTROL_PLANE_URL)%'
+            $serverToken: '%env(SERVER_TOKEN)%'
+
+    App\Application\License\Contract\ControlPlaneLicenseClientInterface: '@App\Infrastructure\License\ControlPlaneLicenseClient'
+
+    App\Infrastructure\License\CachedLicenseProvider:
+        arguments:
+            $cache: '@cache.app'
+            $cacheTtlSeconds: '%env(int:LICENSE_CACHE_TTL)%'
+            $graceTtlSeconds: '%env(int:LICENSE_GRACE_TTL)%'
+
+    App\Application\License\Contract\LicenseProviderInterface: '@App\Infrastructure\License\CachedLicenseProvider'
+
+    App\Infrastructure\ControlPlane\ControlPlaneHeartbeatClient:
+        arguments:
+            $controlPlaneUrl: '%env(CONTROL_PLANE_URL)%'
+            $serverToken: '%env(SERVER_TOKEN)%'
+
+    App\Application\Heartbeat\Contract\HeartbeatClientInterface: '@App\Infrastructure\ControlPlane\ControlPlaneHeartbeatClient'
+
+    App\Console\Command\SendHeartbeatCommand:
+        arguments:
+            $coreRef: '%app.core_ref%'
+            $coreContractVersion: '%app.core_contract_version%'
+
+    App\Http\Action\System\HealthzAction:
+        arguments:
+            $coreRef: '%app.core_ref%'
+
+    App\Http\Security\JwtTokenValidator:
+        arguments:
+            $jwtSecret: '%env(JWT_SECRET)%'
+

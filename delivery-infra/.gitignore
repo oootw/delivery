@@ -1,0 +1,6 @@
+.ansible/
+*.retry
+inventory/production/group_vars/all/vault.key
+.venv/
+plugins/inventory/__pycache__/
+.vault-pass

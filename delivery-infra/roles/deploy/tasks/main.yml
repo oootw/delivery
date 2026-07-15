@@ -1,0 +1,240 @@
+---
+- name: Создать директорию releases
+  ansible.builtin.file:
+    path: "{{ app_root }}/releases"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "0755"
+
+- name: Получить текущий путь симлинка current
+  ansible.builtin.command: "readlink -f {{ app_root }}/current"
+  register: deploy_current_release_target
+  changed_when: false
+  failed_when: false
+
+- name: Сформировать effective_release_ref с учетом pinned_ref
+  ansible.builtin.set_fact:
+    deploy_effective_release_ref: "{{ pinned_ref if (pinned_ref is defined and pinned_ref | length > 0) else release_ref }}"
+
+- name: Сформировать переменные путей релиза
+  ansible.builtin.set_fact:
+    deploy_release_id: "{{ ansible_date_time.epoch }}-{{ deploy_effective_release_ref | regex_replace('[^A-Za-z0-9._-]', '_') }}"
+    deploy_release_dir: "{{ app_root }}/releases/{{ ansible_date_time.epoch }}-{{ deploy_effective_release_ref | regex_replace('[^A-Za-z0-9._-]', '_') }}"
+    deploy_previous_release_dir: "{{ deploy_current_release_target.stdout if deploy_current_release_target.rc == 0 else '' }}"
+
+- name: Клонировать релиз core
+  ansible.builtin.git:
+    repo: "{{ core_repo }}"
+    version: "{{ deploy_effective_release_ref }}"
+    dest: "{{ deploy_release_dir }}"
+    accept_hostkey: true
+    update: false
+  become: true
+  become_user: "{{ deploy_user }}"
+
+- name: Привязать shared overlay директорию
+  ansible.builtin.file:
+    src: "{{ app_root }}/shared/custom"
+    dest: "{{ deploy_release_dir }}/custom"
+    state: link
+    force: true
+  when: deploy_use_custom_overlay | default(true) | bool
+
+- name: Привязать shared var директорию
+  ansible.builtin.file:
+    src: "{{ app_root }}/shared/var"
+    dest: "{{ deploy_release_dir }}/var"
+    state: link
+    force: true
+
+- name: Привязать shared env файл
+  ansible.builtin.file:
+    src: "{{ app_root }}/shared/.env"
+    dest: "{{ deploy_release_dir }}/.env"
+    state: link
+    force: true
+
+- name: Установить PHP-зависимости
+  ansible.builtin.command: composer install --no-dev --optimize-autoloader --no-interaction
+  args:
+    chdir: "{{ deploy_release_dir }}"
+  become: true
+  become_user: "{{ deploy_user }}"
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Проверить совместимость overlay с core-релизом
+  ansible.builtin.command: "{{ deploy_overlay_compat_command | default('php bin/console app:custom:check-compat') }}"
+  args:
+    chdir: "{{ deploy_release_dir }}"
+  become: true
+  become_user: "{{ deploy_user }}"
+  register: deploy_overlay_compat_result
+  changed_when: false
+  failed_when: false
+  when:
+    - not ansible_check_mode
+    - deploy_enable_overlay_compat | default(true) | bool
+
+- name: Вывести причину пропуска хоста при несовместимом overlay
+  ansible.builtin.debug:
+    msg: "Пропускаем {{ inventory_hostname }}: overlay несовместим с release_ref={{ deploy_effective_release_ref }}"
+  when:
+    - not ansible_check_mode
+    - deploy_enable_overlay_compat | default(true) | bool
+    - deploy_overlay_compat_result is defined
+    - deploy_overlay_compat_result.rc != 0
+
+- name: Завершить rollout для хоста при несовместимом overlay
+  ansible.builtin.meta: end_host
+  when:
+    - not ansible_check_mode
+    - deploy_enable_overlay_compat | default(true) | bool
+    - deploy_overlay_compat_result is defined
+    - deploy_overlay_compat_result.rc != 0
+
+- name: Применить миграции базы данных
+  ansible.builtin.command: php bin/console doctrine:migrations:migrate --no-interaction
+  args:
+    chdir: "{{ deploy_release_dir }}"
+  become: true
+  become_user: "{{ deploy_user }}"
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Очистить кэш приложения
+  ansible.builtin.command: php bin/console cache:clear
+  args:
+    chdir: "{{ deploy_release_dir }}"
+  become: true
+  become_user: "{{ deploy_user }}"
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Прогреть кэш приложения
+  ansible.builtin.command: php bin/console cache:warmup
+  args:
+    chdir: "{{ deploy_release_dir }}"
+  become: true
+  become_user: "{{ deploy_user }}"
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Переключить симлинк current на новый релиз
+  ansible.builtin.file:
+    src: "{{ deploy_release_dir }}"
+    dest: "{{ app_root }}/current"
+    state: link
+    force: true
+
+- name: Попросить messenger-воркеры завершиться на старом релизе
+  ansible.builtin.command: php bin/console messenger:stop-workers
+  args:
+    chdir: "{{ app_root }}/current"
+  become: true
+  become_user: "{{ deploy_user }}"
+  changed_when: false
+  failed_when: false
+  when: not ansible_check_mode
+
+- name: Перезагрузить php-fpm
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
+    state: reloaded
+  failed_when: false
+
+- name: Сбросить opcache после смены релиза
+  ansible.builtin.command: "php -d opcache.enable_cli=1 -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }'"
+  changed_when: false
+  failed_when: false
+  when: not ansible_check_mode
+
+- name: Проверить health endpoint
+  ansible.builtin.uri:
+    url: "https://{{ server_domain }}{{ healthcheck_path }}"
+    status_code: 200
+    validate_certs: false
+  register: deploy_healthcheck
+  retries: 5
+  delay: 3
+  until: deploy_healthcheck.status == 200
+  when: not deploy_skip_healthcheck | bool
+
+- name: Откатить симлинк current при ошибке healthcheck
+  ansible.builtin.file:
+    src: "{{ deploy_previous_release_dir }}"
+    dest: "{{ app_root }}/current"
+    state: link
+    force: true
+  when:
+    - not deploy_skip_healthcheck | bool
+    - deploy_healthcheck is failed
+    - deploy_previous_release_dir | length > 0
+
+- name: Завершить rollout с ошибкой при падении healthcheck
+  ansible.builtin.fail:
+    msg: "Healthcheck не прошел для {{ server_domain }} после деплоя {{ deploy_effective_release_ref }}"
+  when:
+    - not deploy_skip_healthcheck | bool
+    - deploy_healthcheck is failed
+
+- name: Записать успешный rollout в аудит control-plane
+  ansible.builtin.uri:
+    url: "{{ control_plane_url }}/v1/deployments"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ vault_cp_release_write_token }}"
+    body_format: json
+    body:
+      kind: rollout
+      release_ref: "{{ deploy_effective_release_ref }}"
+      initiator: ansible
+      target_host: "{{ inventory_hostname }}"
+      status: success
+    status_code: [200, 201]
+    validate_certs: false
+  changed_when: false
+  failed_when: false
+  when:
+    - control_plane_url | length > 0
+    - deploy_skip_healthcheck | bool or (deploy_healthcheck is defined and deploy_healthcheck.status == 200)
+
+- name: Записать провал rollout в аудит control-plane
+  ansible.builtin.uri:
+    url: "{{ control_plane_url }}/v1/deployments"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ vault_cp_release_write_token }}"
+    body_format: json
+    body:
+      kind: rollout
+      release_ref: "{{ deploy_effective_release_ref }}"
+      initiator: ansible
+      target_host: "{{ inventory_hostname }}"
+      status: failed
+    status_code: [200, 201]
+    validate_certs: false
+  changed_when: false
+  failed_when: false
+  when:
+    - control_plane_url | length > 0
+    - not deploy_skip_healthcheck | bool
+    - deploy_healthcheck is failed
+
+- name: Собрать список директорий релизов по времени изменения
+  ansible.builtin.find:
+    paths: "{{ app_root }}/releases"
+    file_type: directory
+    recurse: false
+  register: deploy_release_dirs
+  when: not ansible_check_mode
+
+- name: Удалить старые релизы сверх keep_releases
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ (deploy_release_dirs.files | sort(attribute='mtime', reverse=True))[keep_releases | int :] }}"
+  when:
+    - not ansible_check_mode
+    - deploy_release_dirs.matched | int > keep_releases | int

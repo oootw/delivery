@@ -9,8 +9,6 @@ use App\Application\Customization\Access\CustomRole;
 use App\Application\Customization\Contract\AbstractCustomModule;
 use App\Application\Customization\Entity\CustomRoleAssignment\CustomRoleAssignment;
 use App\Application\Customization\Entity\CustomRoleAssignment\CustomRoleAssignmentRepositoryInterface;
-use App\Application\Customization\Entity\WorkspaceCustomModule\WorkspaceCustomModule;
-use App\Application\Customization\Entity\WorkspaceCustomModule\WorkspaceCustomModuleRepositoryInterface;
 use App\Application\Customization\Registry\CustomModuleRegistry;
 use App\Application\Workspace\Entity\Workspace\Workspace;
 use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
@@ -25,61 +23,53 @@ final class CustomAccessTest extends TestCase
 
     public function testOwnerHasEveryRoleOfActiveModule(): void
     {
-        $access = $this->access(moduleActive: true, assignedTo: []);
+        $access = $this->access(assignedTo: []);
 
         self::assertTrue($access->hasRole(self::WORKSPACE_ID, self::OWNER_ID, self::ROLE));
     }
 
     public function testAssignedStaffHasRole(): void
     {
-        $access = $this->access(moduleActive: true, assignedTo: [self::STAFF_ID]);
+        $access = $this->access(assignedTo: [self::STAFF_ID]);
 
         self::assertTrue($access->hasRole(self::WORKSPACE_ID, self::STAFF_ID, self::ROLE));
     }
 
     public function testUnassignedStaffHasNoRole(): void
     {
-        $access = $this->access(moduleActive: true, assignedTo: []);
+        $access = $this->access(assignedTo: []);
 
-        self::assertFalse($access->hasRole(self::WORKSPACE_ID, self::STAFF_ID, self::ROLE));
-    }
-
-    public function testInactiveModuleGrantsNoRoleEvenToOwner(): void
-    {
-        $access = $this->access(moduleActive: false, assignedTo: [self::STAFF_ID]);
-
-        self::assertFalse($access->hasRole(self::WORKSPACE_ID, self::OWNER_ID, self::ROLE));
         self::assertFalse($access->hasRole(self::WORKSPACE_ID, self::STAFF_ID, self::ROLE));
     }
 
     public function testUndeclaredRoleIsRejected(): void
     {
-        $access = $this->access(moduleActive: true, assignedTo: [self::STAFF_ID]);
+        $access = $this->access(assignedTo: [self::STAFF_ID]);
 
         self::assertFalse($access->hasRole(self::WORKSPACE_ID, self::STAFF_ID, 'acme.unknown'));
     }
 
     public function testAssertModuleActiveThrowsWhenInactive(): void
     {
-        $access = $this->access(moduleActive: false, assignedTo: []);
+        $access = $this->access(assignedTo: []);
 
         $this->expectException(\DomainException::class);
-        $access->assertModuleActive(self::WORKSPACE_ID, 'acme');
+        $access->assertModuleActive(self::WORKSPACE_ID, 'missing');
     }
 
     /**
      * @param list<int> $assignedTo пользователи, которым назначена роль ROLE
      */
-    private function access(bool $moduleActive, array $assignedTo): CustomAccess
+    private function access(array $assignedTo): CustomAccess
     {
         return new CustomAccess(
-            $this->registry($moduleActive),
+            $this->registry(),
             $this->assignments($assignedTo),
             $this->workspaces(),
         );
     }
 
-    private function registry(bool $active): CustomModuleRegistry
+    private function registry(): CustomModuleRegistry
     {
         $module = new class extends AbstractCustomModule {
             public function slug(): string
@@ -98,31 +88,7 @@ final class CustomAccessTest extends TestCase
             }
         };
 
-        $activation = new class($active) implements WorkspaceCustomModuleRepositoryInterface {
-            public function __construct(private readonly bool $active) {}
-
-            public function save(WorkspaceCustomModule $module): int
-            {
-                return 0;
-            }
-
-            public function findByWorkspaceAndSlug(int $workspaceId, string $slug): ?WorkspaceCustomModule
-            {
-                return null;
-            }
-
-            public function findByWorkspace(int $workspaceId): array
-            {
-                return [];
-            }
-
-            public function findEnabledSlugsByWorkspace(int $workspaceId): array
-            {
-                return $this->active && $workspaceId === CustomAccessTest::WORKSPACE_ID ? ['acme'] : [];
-            }
-        };
-
-        return new CustomModuleRegistry([$module], $activation);
+        return new CustomModuleRegistry([$module]);
     }
 
     /**

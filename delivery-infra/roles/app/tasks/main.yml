@@ -1,0 +1,70 @@
+---
+- name: Создать shared-директории приложения
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: "{{ app_root }}/shared", mode: "0755" }
+    - { path: "{{ app_root }}/shared/var", mode: "0755" }
+    - { path: "{{ app_root }}/shared/custom", mode: "0755" }
+
+- name: Подготовить fallback-значения owner/workspace/token
+  ansible.builtin.set_fact:
+    app_resolved_owner_id: "{{ owner_id | default(0) }}"
+    app_resolved_workspace_id: "{{ workspace_id | default(0) }}"
+    app_resolved_server_token: "{{ vault_server_token | default('') }}"
+
+- name: Зарегистрировать data-plane сервер в control-plane
+  ansible.builtin.uri:
+    url: "{{ control_plane_url }}/v1/register"
+    method: POST
+    body_format: json
+    body:
+      owner_slug: "{{ owner_slug }}"
+      domain: "{{ server_domain }}"
+      core_ref: "{{ release_ref }}"
+      contract_version: "{{ contract_version }}"
+    status_code: [200, 201]
+    return_content: true
+    validate_certs: false
+  register: app_control_plane_register_result
+  changed_when: false
+  failed_when: false
+  when:
+    - app_register_on_provision | bool
+    - control_plane_url | length > 0
+    - owner_slug is defined
+    - server_domain is defined
+
+- name: Обновить owner/workspace/token из ответа control-plane
+  ansible.builtin.set_fact:
+    app_resolved_owner_id: "{{ app_control_plane_register_result.json.owner_id }}"
+    app_resolved_workspace_id: "{{ app_control_plane_register_result.json.workspace_id }}"
+    app_resolved_server_token: "{{ app_control_plane_register_result.json.server_token }}"
+  when:
+    - app_control_plane_register_result is defined
+    - app_control_plane_register_result.status in [200, 201]
+    - app_control_plane_register_result.json is defined
+
+- name: Сгенерировать shared .env файл
+  ansible.builtin.template:
+    src: shared.env.j2
+    dest: "{{ app_root }}/shared/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "0600"
+
+- name: Клонировать overlay-репозиторий в shared/custom
+  ansible.builtin.git:
+    repo: "{{ custom_repo }}"
+    version: "{{ custom_repo_ref }}"
+    dest: "{{ app_root }}/shared/custom"
+    update: true
+    force: true
+    accept_hostkey: true
+  become: true
+  become_user: "{{ deploy_user }}"
+  when: app_clone_overlay | bool

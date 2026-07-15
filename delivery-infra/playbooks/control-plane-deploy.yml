@@ -1,0 +1,12 @@
+---
+- name: Раскатить релиз control-plane
+  hosts: controlplane
+  gather_facts: true
+  become: true
+  vars:
+    core_repo: "{{ control_plane_repo }}"
+    release_ref: "{{ cp_release_ref | default(release_ref) }}"
+    deploy_use_custom_overlay: false
+    deploy_enable_overlay_compat: false
+  roles:
+    - deploy

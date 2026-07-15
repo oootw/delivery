@@ -26,7 +26,7 @@ class GetClientCategoriesAction extends AbstractController
         try {
             $categories = $this->getClientCategories->fetch(
                 new GetClientCategoriesByVenueIdQuery(
-                    workspaceSlug: $this->workspaceContext->getSlug(),
+                    workspaceId: $this->workspaceContext->getWorkspaceId(),
                     venueId: $venueId,
                 ),
             );

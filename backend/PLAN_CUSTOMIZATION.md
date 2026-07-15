@@ -1,7 +1,21 @@
 # ADR + план: система кастомизации под отдельного владельца (2026-07-12)
 
-**Статус:** предложение (черновик к внедрению).
+**Статус:** заморожено (legacy Variant A, historical reference).
 **Автор решения:** архитектурная проработка по запросу владельца продукта.
+
+## Важно: документ не является актуальным планом внедрения
+
+Этот ADR описывает ранний вариант кастомизации (Variant A) с путями `src/Custom/*`
+и активацией через `workspace_custom_module`.
+
+Актуальный source of truth:
+- `/home/moont/dev/delivery/PLAN_FLEET.md`
+- `/home/moont/dev/delivery/delivery-core/docs/OWNER_OVERLAY_GOLDEN_PATH.md`
+
+В текущем контуре:
+- overlay живёт в `custom/src/*`;
+- сервер single-tenant, активация модулей не управляется таблицей `workspace_custom_module`;
+- DevX-команды `app:custom:new`, `app:custom:doctor`, `app:custom:check-compat` реализованы в `delivery-core`.
 
 ## 1. Контекст и цель
 

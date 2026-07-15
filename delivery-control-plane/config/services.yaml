@@ -1,0 +1,39 @@
+parameters:
+    app.release_write_token: '%env(default::CP_RELEASE_WRITE_TOKEN)%'
+    app.inventory_api_token: '%env(default::CP_INVENTORY_API_TOKEN)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+    App\Application\Server\Entity\RegisteredServer\RegisteredServerRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Server\RegisteredServerRepository'
+    App\Application\Release\Entity\CoreRelease\CoreReleaseRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Release\CoreReleaseRepository'
+    App\Application\Deployment\Entity\Deployment\DeploymentRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Deployment\DeploymentRepository'
+    App\Application\Subscription\Entity\OwnerSubscription\OwnerSubscriptionRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Subscription\OwnerSubscriptionRepository'
+    App\Application\Authorize\Entity\User\UserRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Authorize\UserRepository'
+    App\Application\Tarif\Entity\Tarif\TarifRepositoryInterface: '@App\Infrastructure\Doctrine\Domain\Tarif\TarifRepository'
+
+    App\Http\Action\ControlPlane\GetServersAction:
+        arguments:
+            $inventoryApiToken: '%app.inventory_api_token%'
+
+    App\Application\Authorize\Service\IssueJwtToken:
+        arguments:
+            $jwtSecret: '%env(JWT_SECRET)%'
+
+    App\Http\Action\ControlPlane\CreateReleaseAction:
+        arguments:
+            $releaseWriteToken: '%app.release_write_token%'
+
+    App\Http\Action\ControlPlane\RecordDeploymentAction:
+        arguments:
+            $releaseWriteToken: '%app.release_write_token%'
+
+    App\Console\Command\ImportLegacyDataCommand:
+        arguments:
+            $legacyDatabaseUrl: '%env(default::LEGACY_DATABASE_URL)%'
+

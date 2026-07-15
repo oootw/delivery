@@ -24,10 +24,10 @@ final class CustomAccess
         private readonly WorkspaceRepositoryInterface $workspaces,
     ) {}
 
-    /** Активен ли модуль на воркспейсе (иначе его эндпоинты не должны существовать → 404). */
+    /** Активен ли модуль на сервере (иначе его эндпоинты не должны существовать → 404). */
     public function isModuleActive(int $workspaceId, string $slug): bool
     {
-        return $this->modules->isActive($workspaceId, $slug);
+        return $this->modules->has($slug);
     }
 
     public function assertModuleActive(int $workspaceId, string $slug): void
@@ -37,7 +37,7 @@ final class CustomAccess
         }
     }
 
-    /** Объявлена ли роль каким-либо активным на воркспейсе модулем. */
+    /** Объявлена ли роль каким-либо активным на сервере модулем. */
     public function roleIsAvailable(int $workspaceId, string $roleKey): bool
     {
         return $this->isDeclaredByActiveModule($workspaceId, $roleKey);
@@ -72,7 +72,7 @@ final class CustomAccess
 
     private function isDeclaredByActiveModule(int $workspaceId, string $roleKey): bool
     {
-        foreach ($this->modules->activeFor($workspaceId) as $module) {
+        foreach ($this->modules->all() as $module) {
             foreach ($module->roles() as $role) {
                 if ($role->key === $roleKey) {
                     return true;

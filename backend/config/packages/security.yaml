@@ -52,6 +52,8 @@ security:
             security: false
 
     access_control:
+        - { path: ^/healthz, roles: PUBLIC_ACCESS }
+        - { path: ^/v1/license, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/webhooks, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }

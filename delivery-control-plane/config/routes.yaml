@@ -1,0 +1,12 @@
+control_plane_actions:
+    resource: ../src/Http/Action/ControlPlane/
+    type: attribute
+
+authorize_actions:
+    resource: ../src/Http/Action/Authorize/
+    type: attribute
+
+system_actions:
+    resource: ../src/Http/Action/System/
+    type: attribute
+

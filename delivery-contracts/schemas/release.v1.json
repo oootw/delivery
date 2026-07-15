@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://delivery/contracts/release.v1.json",
+  "title": "ReleaseApiV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request",
+    "response"
+  ],
+  "properties": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "contract_version"
+      ],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1 },
+        "contract_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "contract_version",
+        "latest"
+      ],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1 },
+        "contract_version": { "type": "string", "minLength": 1 },
+        "latest": { "type": "boolean" }
+      }
+    }
+  }
+}

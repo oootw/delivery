@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
  * Guardrail главного инварианта системы кастомизации: ядро не знает про клиентский кастом.
  *
  * Слои App\Application / App\Infrastructure / App\Http НЕ имеют права ссылаться на
- * App\Custom\*. Кастом выбирается по тегам/данным (CustomModuleRegistry), а не по имени
+ * App\Custom\*. Кастом подключается через overlay и теги контейнера, а не по имени
  * класса в ядре. Нарушение = красный тест (см. backend/PLAN_CUSTOMIZATION.md).
  */
 final class CustomizationBoundaryTest extends TestCase

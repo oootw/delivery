@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Workspace\Service;
 
-use App\Application\Subscription\Entity\Subscription\SubscriptionRepositoryInterface;
+use App\Application\License\Contract\LicenseProviderInterface;
+use App\Application\License\Enum\LicenseStatusEnum;
 use App\Application\Workspace\Entity\Membership\MembershipRepositoryInterface;
 use App\Application\Workspace\Entity\Workspace\Workspace;
 use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
@@ -12,19 +13,18 @@ use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
 /**
  * Проверки доступа к воркспейсу. Владелец управляет воркспейсом и точками;
  * любой участник (владелец или сотрудник) может просматривать данные воркспейса.
- * Право владельца в системе = наличие активной подписки, поэтому мутации требуют её.
+ * Право владельца в системе определяется статусом лицензии control-plane.
  */
 final class WorkspaceAccess
 {
     public function __construct(
         private readonly WorkspaceRepositoryInterface $workspaces,
         private readonly MembershipRepositoryInterface $memberships,
-        private readonly SubscriptionRepositoryInterface $subscriptions,
+        private readonly LicenseProviderInterface $licenseProvider,
     ) {}
 
     /**
-     * Владельческий доступ для мутаций: проверяет владение И активную подписку.
-     * Без подписки (past_due/canceled) владелец не может менять точки/меню/промо.
+     * Владельческий доступ для мутаций: проверяет владение И активную лицензию.
      */
     public function getOwnedWorkspace(int $workspaceId, int $userId): Workspace
     {
@@ -38,7 +38,7 @@ final class WorkspaceAccess
             throw new \DomainException('Недостаточно прав');
         }
 
-        $this->requireActiveSubscription($workspace->ownerId);
+        $this->requireActiveLicense();
 
         return $workspace;
     }
@@ -53,8 +53,8 @@ final class WorkspaceAccess
     }
 
     /**
-     * Работает ли воркспейс: у его владельца есть активная подписка. Для гостевого
-     * пути (приём заказов) — воркспейс с неоплаченной подпиской заказы не принимает.
+     * Работает ли воркспейс: у его владельца есть активная лицензия. Для гостевого
+     * пути (приём заказов) — воркспейс с неактивной лицензией заказы не принимает.
      */
     public function requireActiveWorkspace(int $workspaceId): void
     {
@@ -64,12 +64,18 @@ final class WorkspaceAccess
             throw new \DomainException('Воркспейс не найден');
         }
 
-        $this->requireActiveSubscription($workspace->ownerId);
+        $this->requireActiveLicense();
     }
 
-    private function requireActiveSubscription(int $ownerId): void
+    private function requireActiveLicense(): void
     {
-        if ($this->subscriptions->findActiveByUser($ownerId) === null) {
+        try {
+            $snapshot = $this->licenseProvider->getSnapshot();
+        } catch (\Throwable) {
+            throw new \DomainException('Подписка воркспейса неактивна');
+        }
+
+        if ($snapshot->status !== LicenseStatusEnum::Active) {
             throw new \DomainException('Подписка воркспейса неактивна');
         }
     }

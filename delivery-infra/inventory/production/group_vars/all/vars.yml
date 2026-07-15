@@ -1,0 +1,48 @@
+app_root: /opt/app
+deploy_user: deploy
+deploy_group: deploy
+php_version: "8.4"
+keep_releases: 3
+healthcheck_path: /healthz
+
+core_repo: "git@github.com:oootw/delivery-core.git"
+control_plane_repo: "git@github.com:oootw/delivery-control-plane.git"
+contracts_repo: "git@github.com:oootw/delivery-contracts.git"
+release_ref: "main"
+cp_release_ref: "main"
+contract_version: "1.0.0"
+custom_repo_ref: "main"
+control_plane_url: "https://control.example.com"
+cp_inventory_api_token: "{{ vault_cp_inventory_api_token }}"
+app_clone_overlay: false
+provision_run_initial_deploy: false
+deploy_skip_healthcheck: true
+app_register_on_provision: true
+release_bake_seconds: 1800
+rollout_serial: 1
+canary_serial: 1
+hotfix_serial: 1
+
+postgres_managed: false
+postgres_version: "16"
+postgres_db_name: app
+postgres_db_user: app
+
+base_manage_packages: true
+base_packages:
+  - git
+  - unzip
+  - curl
+  - ca-certificates
+  - rsync
+  - python3-psycopg2
+  - "php{{ php_version }}-fpm"
+  - "php{{ php_version }}-cli"
+  - "php{{ php_version }}-xml"
+  - "php{{ php_version }}-mbstring"
+  - "php{{ php_version }}-curl"
+  - "php{{ php_version }}-pgsql"
+  - postgresql
+  - postgresql-contrib
+
+app_env: prod

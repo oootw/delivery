@@ -1,0 +1,11 @@
+{
+  "request": {
+    "ref": "v2.0.1",
+    "contract_version": "1.0.0"
+  },
+  "response": {
+    "ref": "v2.0.1",
+    "contract_version": "1.0.0",
+    "latest": true
+  }
+}

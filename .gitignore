@@ -1,0 +1,15 @@
+# Monorepo local artifacts
+**/.DS_Store
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/vendor/
+**/var/cache/
+**/var/log/
+
+# Runtime/env files for split services
+/delivery-core/.env
+/delivery-core/.env.local
+/delivery-control-plane/.env
+/delivery-control-plane/.env.local
+/delivery-infra/.vault-pass

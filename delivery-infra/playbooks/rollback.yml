@@ -1,0 +1,53 @@
+---
+- name: Откатить на предыдущий core-релиз
+  hosts: dataplane
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Найти директории релизов
+      ansible.builtin.find:
+        paths: "{{ app_root }}/releases"
+        file_type: directory
+        recurse: false
+      register: rollback_release_dirs
+
+    - name: Завершить с ошибкой, если релизов меньше двух
+      ansible.builtin.fail:
+        msg: "Недостаточно релизов для отката (нужно минимум 2)"
+      when: rollback_release_dirs.matched | int < 2
+
+    - name: Вычислить путь к предыдущему релизу
+      ansible.builtin.set_fact:
+        rollback_target_release: "{{ (rollback_release_dirs.files | sort(attribute='mtime', reverse=True))[1].path }}"
+
+    - name: Переключить current на предыдущий релиз
+      ansible.builtin.file:
+        src: "{{ rollback_target_release }}"
+        dest: "{{ app_root }}/current"
+        state: link
+        force: true
+
+    - name: Перезагрузить php-fpm после rollback
+      ansible.builtin.service:
+        name: "php{{ php_version }}-fpm"
+        state: reloaded
+      failed_when: false
+
+    - name: Записать rollback в аудит control-plane
+      ansible.builtin.uri:
+        url: "{{ control_plane_url }}/v1/deployments"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ vault_cp_release_write_token }}"
+        body_format: json
+        body:
+          kind: rollback
+          release_ref: "{{ rollback_target_release | basename }}"
+          initiator: ansible
+          target_host: "{{ inventory_hostname }}"
+          status: success
+        status_code: [200, 201]
+        validate_certs: false
+      changed_when: false
+      failed_when: false
+      when: control_plane_url | length > 0

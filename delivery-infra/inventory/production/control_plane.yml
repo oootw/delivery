@@ -1,0 +1,4 @@
+plugin: control_plane
+control_plane_url: https://control.example.com
+api_token: ""
+

@@ -1,0 +1,32 @@
+---
+- name: Проверить дрейф версий между data-plane и control-plane
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Получить latest release из control-plane
+      ansible.builtin.uri:
+        url: "{{ control_plane_url }}/v1/release/latest"
+        method: GET
+        return_content: true
+        validate_certs: false
+      register: cp_latest_release
+      failed_when: false
+      changed_when: false
+
+    - name: Получить список серверов из control-plane
+      ansible.builtin.uri:
+        url: "{{ control_plane_url }}/v1/servers"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ cp_inventory_api_token | default('') }}"
+        return_content: true
+        validate_certs: false
+      register: cp_servers_inventory
+      failed_when: false
+      changed_when: false
+
+    - name: Показать срез по дрейфу
+      ansible.builtin.debug:
+        msg:
+          - "latest_ref={{ cp_latest_release.json.ref | default('unknown') }}"
+          - "servers={{ cp_servers_inventory.json.servers | default([]) | length }}"

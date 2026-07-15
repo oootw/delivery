@@ -26,14 +26,15 @@ class GetClientCategoriesByVenueIdFetcher
      */
     public function fetch(GetClientCategoriesByVenueIdQuery $query): array
     {
-        $this->access->venueOfWorkspace($query->workspaceSlug, $query->venueId);
+        $workspace = $this->access->workspaceById($query->workspaceId);
+        $this->access->venueOfWorkspace($query->workspaceId, $query->venueId);
 
         return array_map(
             fn(Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'position' => $category->position,
-                'photo_url' => $this->menuImages->findUrl($query->workspaceSlug, MenuImageKind::Category, (int) $category->id),
+                'photo_url' => $this->menuImages->findUrl($workspace->slug, MenuImageKind::Category, (int) $category->id),
             ],
             $this->categories->findActiveByVenue($query->venueId),
         );

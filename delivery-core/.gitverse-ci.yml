@@ -1,0 +1,60 @@
+stages:
+  - ci
+  - release
+
+variables:
+  APP_ENV: test
+
+core_ci:
+  stage: ci
+  image: php:8.4-cli
+  before_script:
+    - apt-get update
+    - apt-get install -y git unzip libzip-dev
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - composer install --no-interaction --prefer-dist
+  script:
+    - php -l src/Infrastructure/License/ControlPlaneLicenseClient.php
+    - php -l src/Infrastructure/License/CachedLicenseProvider.php
+    - php -l src/Console/Command/LicenseRefreshCommand.php
+    - php -l src/Console/Command/SendHeartbeatCommand.php
+    - php -l src/Console/Command/CustomCheckCompatCommand.php
+    - php -l src/Console/Command/CustomDoctorCommand.php
+    - php -l src/Console/Command/CustomNewCommand.php
+    - php -l src/Application/Customization/Doctor/OverlayDoctor.php
+    - php -l src/Application/Customization/Scaffold/OverlayScaffolder.php
+    - php -l src/Http/Action/System/HealthzAction.php
+    - php tools/contract_compat_check.php
+    - php bin/console list app:custom
+    - php bin/console app:custom:new --help
+    - sh -c 'php bin/console app:custom:doctor >/tmp/custom-doctor.log 2>&1 || [ $? -eq 2 ]'
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'
+
+core_release:
+  stage: release
+  image: python:3.12
+  needs:
+    - core_ci
+  before_script:
+    - pip install ansible-core ansible-lint
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf '%s' "$CORE_DEPLOY_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+  script:
+    - curl -fsS -X POST "$CONTROL_PLANE_URL/v1/release" -H "Authorization: Bearer $CP_RELEASE_WRITE_TOKEN" -H "Content-Type: application/json" -d "{\"ref\":\"${RELEASE_REF:-$CI_COMMIT_SHA}\",\"contract_version\":\"${CORE_CONTRACT_VERSION:-1.0.0}\"}"
+    - cd ../delivery-infra
+    - ansible-galaxy collection install -r collections/requirements.yml
+    - printf '%s' "$ANSIBLE_VAULT_PASSWORD" > .vault-pass
+    - chmod 600 .vault-pass
+    - ansible-playbook -i inventory/production playbooks/release.yml --vault-password-file .vault-pass -e "release_ref=${RELEASE_REF:-$CI_COMMIT_SHA}"
+  after_script:
+    - rm -f ../delivery-infra/.vault-pass
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+

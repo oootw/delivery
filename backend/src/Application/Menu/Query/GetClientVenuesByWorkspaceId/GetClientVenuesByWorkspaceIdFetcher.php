@@ -9,7 +9,7 @@ use App\Application\Venue\Entity\Venue\Venue;
 use App\Application\Venue\Entity\Venue\VenueRepositoryInterface;
 
 /**
- * Витрина точек бренда для клиента: активные точки воркспейса (определён по slug поддомена).
+ * Витрина точек бренда для клиента: активные точки воркспейса сервера.
  */
 class GetClientVenuesByWorkspaceIdFetcher
 {
@@ -23,7 +23,7 @@ class GetClientVenuesByWorkspaceIdFetcher
      */
     public function fetch(GetClientVenuesByWorkspaceIdQuery $query): array
     {
-        $workspace = $this->access->workspaceBySlug($query->workspaceSlug);
+        $workspace = $this->access->workspaceById($query->workspaceId);
 
         $venues = array_filter(
             $this->venues->findAllByWorkspace((int) $workspace->id),

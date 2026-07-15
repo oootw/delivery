@@ -1,0 +1,73 @@
+---
+- name: Создать группу deploy
+  ansible.builtin.group:
+    name: "{{ deploy_group }}"
+    state: present
+
+- name: Создать пользователя deploy
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Установить базовые пакеты на Debian
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    state: present
+    update_cache: true
+  when:
+    - base_manage_packages | bool
+    - ansible_facts.os_family == "Debian"
+
+- name: Создать базовую структуру директорий приложения
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: "{{ app_root }}", mode: "0755" }
+    - { path: "{{ app_root }}/releases", mode: "0755" }
+    - { path: "{{ app_root }}/shared", mode: "0755" }
+    - { path: "{{ app_root }}/shared/custom", mode: "0755" }
+    - { path: "{{ app_root }}/shared/var", mode: "0755" }
+
+- name: Установить шаблон systemd unit для messenger
+  ansible.builtin.template:
+    src: app-messenger@.service.j2
+    dest: /etc/systemd/system/app-messenger@.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезагрузить systemd daemon
+  when: ansible_service_mgr == "systemd"
+
+- name: Установить systemd unit heartbeat-сервиса
+  ansible.builtin.template:
+    src: app-heartbeat.service.j2
+    dest: /etc/systemd/system/app-heartbeat.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезагрузить systemd daemon
+  when: ansible_service_mgr == "systemd"
+
+- name: Установить systemd unit heartbeat-таймера
+  ansible.builtin.template:
+    src: app-heartbeat.timer.j2
+    dest: /etc/systemd/system/app-heartbeat.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Перезагрузить systemd daemon
+  when: ansible_service_mgr == "systemd"
+
+- name: Включить heartbeat-таймер
+  ansible.builtin.systemd:
+    name: app-heartbeat.timer
+    enabled: true
+    state: started
+  when: ansible_service_mgr == "systemd"

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://delivery/contracts/heartbeat.v1.json",
+  "title": "HeartbeatApiV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request",
+    "response"
+  ],
+  "properties": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "server_token",
+        "core_ref",
+        "contract_version",
+        "health_status"
+      ],
+      "properties": {
+        "server_token": { "type": "string", "minLength": 1 },
+        "core_ref": { "type": "string", "minLength": 1 },
+        "contract_version": { "type": "string", "minLength": 1 },
+        "health_status": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted",
+        "target_core_ref",
+        "pinned"
+      ],
+      "properties": {
+        "accepted": { "type": "boolean" },
+        "target_core_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pinned": { "type": "boolean" }
+      }
+    }
+  }
+}

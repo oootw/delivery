@@ -31,7 +31,8 @@ class GetClientProductsByCategoryIdFetcher
      */
     public function fetch(GetClientProductsByCategoryIdQuery $query): array
     {
-        $this->access->venueOfWorkspace($query->workspaceSlug, $query->venueId);
+        $workspace = $this->access->workspaceById($query->workspaceId);
+        $this->access->venueOfWorkspace($query->workspaceId, $query->venueId);
 
         $category = $this->categories->findById($query->categoryId);
 
@@ -48,7 +49,7 @@ class GetClientProductsByCategoryIdFetcher
                 continue;
             }
 
-            $cards[] = $this->cardFor($item, $query->workspaceSlug, $overrides);
+            $cards[] = $this->cardFor($item, $workspace->slug, $overrides);
         }
 
         return $cards;

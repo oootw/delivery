@@ -7,7 +7,7 @@ namespace App\Application\Menu\Query\GetClientProductsByCategoryId;
 class GetClientProductsByCategoryIdQuery
 {
     public function __construct(
-        public readonly string $workspaceSlug,
+        public readonly int $workspaceId,
         public readonly int $venueId,
         public readonly int $categoryId,
     ) {}

@@ -1,0 +1,13 @@
+{
+  "request": {
+    "owner_slug": "acme",
+    "domain": "acme.example.com",
+    "core_ref": "v2.0.0",
+    "contract_version": "1.0.0"
+  },
+  "response": {
+    "owner_id": 1,
+    "workspace_id": 101,
+    "server_token": "token-example"
+  }
+}

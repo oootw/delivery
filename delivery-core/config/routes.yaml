@@ -1,0 +1,4 @@
+system_actions:
+    resource: ../src/Http/Action/System/
+    type: attribute
+

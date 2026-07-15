@@ -25,7 +25,7 @@ class GetClientVenuesAction extends AbstractController
     {
         try {
             $venues = $this->getClientVenues->fetch(
-                new GetClientVenuesByWorkspaceIdQuery(workspaceSlug: $this->workspaceContext->getSlug()),
+                new GetClientVenuesByWorkspaceIdQuery(workspaceId: $this->workspaceContext->getWorkspaceId()),
             );
 
             return ApiResponse::success(['venues' => $venues]);

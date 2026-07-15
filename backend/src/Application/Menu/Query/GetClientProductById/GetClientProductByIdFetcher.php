@@ -33,7 +33,8 @@ class GetClientProductByIdFetcher
      */
     public function fetch(GetClientProductByIdQuery $query): array
     {
-        $this->access->venueOfWorkspace($query->workspaceSlug, $query->venueId);
+        $workspace = $this->access->workspaceById($query->workspaceId);
+        $this->access->venueOfWorkspace($query->workspaceId, $query->venueId);
 
         $item = $this->items->findById($query->itemId);
 
@@ -51,7 +52,7 @@ class GetClientProductByIdFetcher
             'description' => $item->description,
             'price_kopecks' => $item->priceKopecks,
             'is_available' => $item->isAvailable,
-            'images' => $this->assembler->images($query->workspaceSlug, $item),
+            'images' => $this->assembler->images($workspace->slug, $item),
             'nutrition' => $nutrition->toArray(),
             'modifier_groups' => $this->buildModifierGroups($item->modifierGroupExternalIds, $query->venueId),
         ];

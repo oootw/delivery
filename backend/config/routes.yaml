@@ -11,7 +11,13 @@ controllers:
     resource: ../src/Http/Action/
     prefix: /api/v1
     type: attribute
-    exclude: ../src/Http/Action/Authorize/
+    exclude:
+        - ../src/Http/Action/Authorize/
+        - ../src/Http/Action/System/
+
+system_controllers:
+    resource: ../src/Http/Action/System/
+    type: attribute
 
 authorize_controllers:
     resource: ../src/Http/Action/Authorize/
@@ -22,10 +28,6 @@ admin_controllers:
     resource: ../src/Http/Admin/
     type: attribute
 
-# Эндпоинты клиентских модулей (src/Custom/{slug}/Http/Action). Только классы с #[Route]
-# дают роуты; префикс /api/v1 — как у ядра. Экшены сами гейтят доступ (модуль активен + роль),
-# иначе 404.
-custom_controllers:
-    resource: ../src/Custom/
-    type: attribute
-    prefix: /api/v1
+# Роуты overlay подхватываются из custom/config/routes.yaml, если каталог custom существует.
+custom_routes:
+    resource: ../custom/config/routes.yaml

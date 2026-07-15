@@ -31,7 +31,7 @@ class GetClientProductsAction extends AbstractController
         try {
             $products = $this->getClientProducts->fetch(
                 new GetClientProductsByCategoryIdQuery(
-                    workspaceSlug: $this->workspaceContext->getSlug(),
+                    workspaceId: $this->workspaceContext->getWorkspaceId(),
                     venueId: $venueId,
                     categoryId: $categoryId,
                 ),

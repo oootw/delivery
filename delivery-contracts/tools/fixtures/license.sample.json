@@ -1,0 +1,6 @@
+{
+  "tarif": "pro",
+  "features": ["points", "crm", "analytics"],
+  "status": "active",
+  "valid_until": "2026-12-31T00:00:00+00:00"
+}

@@ -22,12 +22,11 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Infrastructure/Doctrine/Domain'
                 prefix: 'App\Infrastructure\Doctrine\Domain'
                 alias: App
-            # Doctrine-сущности клиентских модулей (src/Custom/{slug}/Infrastructure/Doctrine).
-            # Одна запись покрывает все модули; таблицы именуются custom_{slug}_*.
+            # Doctrine-сущности overlay (custom/src).
             Custom:
                 type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Custom'
+                dir: '%kernel.project_dir%/custom/src'
                 prefix: 'App\Custom'
                 alias: Custom
 

@@ -1,9 +1,4 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Symfony
+name: Delivery Mono CI
 
 on:
   push:
@@ -15,33 +10,98 @@ permissions:
   contents: read
 
 jobs:
-  symfony-tests:
+  contracts:
     runs-on: ubuntu-latest
     steps:
-    #  To automatically get bug fixes and new Php versions for shivammathur/setup-php,
-    # change this to (see https://github.com/shivammathur/setup-php#bookmark-versioning):
-    # uses: shivammathur/setup-php@v2
-    - uses: shivammathur/setup-php@2cb9b829437ee246e9b3cac53555a39208ca6d28
+    - uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.0'
+        php-version: '8.4'
     - uses: actions/checkout@v4
-    - name: Copy .env.test.local
-      run: php -r "file_exists('.env.test.local') || copy('.env.test', '.env.test.local');"
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
+    - name: Check delivery-contracts
+      run: php delivery-contracts/tools/contract_check.php
+
+  control-plane:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: shivammathur/setup-php@v2
       with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
-    - name: Install Dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-    - name: Create Database
+        php-version: '8.4'
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      working-directory: delivery-control-plane
+      run: composer install --no-interaction --prefer-dist
+    - name: Contract compatibility
+      run: php delivery-control-plane/tools/contract_compat_check.php
+
+  core:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      working-directory: delivery-core
+      run: composer install --no-interaction --prefer-dist
+    - name: Contract compatibility
+      run: php delivery-core/tools/contract_compat_check.php
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: 3003fylhtq3003
+        ports:
+          - 5466:5432
+        options: >-
+          --health-cmd="pg_isready -U app -d app"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://app:3003fylhtq3003@127.0.0.1:5466/app?serverVersion=16&charset=utf8
+      WORKSPACE_ID: 1
+      JWT_SECRET: test-jwt-secret
+      JWT_ACCESS_TTL: 900
+      JWT_REFRESH_TTL: 604800
+      CONTROL_PLANE_URL: http://127.0.0.1
+      SERVER_TOKEN: test-server-token
+      LICENSE_CACHE_TTL: 300
+      LICENSE_GRACE_TTL: 259200
+      LICENSE_SERVER_REGISTRY: '[{"server_token":"test-server-token","owner_id":1001,"workspace_id":1,"tarif":"pro","status":"active","valid_until":"2030-01-01T00:00:00+00:00","features":["points","crm","analytics","support"]}]'
+      APP_POS_SECRET_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      CLOUDPAYMENTS_PUBLIC_ID: test-public
+      CLOUDPAYMENTS_API_SECRET: test-secret
+      CLOUDPAYMENTS_API_URL: https://api.cloudpayments.ru
+      YOOKASSA_API_URL: https://api.yookassa.ru/v3
+      SMS_API_KEY: test
+      SMS_API_PHONE_NUMBER: "+79001234567"
+      SMS_API_URL: https://sms-provider.example.com/send
+      IIKO_API_URL: https://api-ru.iiko.services
+    steps:
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      working-directory: backend
+      run: composer install --no-interaction --prefer-dist
+    - name: Validate container wiring
+      working-directory: backend
+      run: php bin/console lint:container --env=test
+    - name: Validate doctrine schema
+      working-directory: backend
+      run: php bin/console doctrine:schema:validate --skip-sync --env=test
+    - name: Run architecture boundary test
+      working-directory: backend
+      run: php vendor/bin/phpunit tests/Unit/Architecture/CustomizationBoundaryTest.php --configuration phpunit.dist.xml
+    - name: Run contract compatibility checks
+      working-directory: backend
       run: |
-        mkdir -p data
-        touch data/database.sqlite
-    - name: Execute tests (Unit and Feature tests) via PHPUnit
-      env:
-        DATABASE_URL: sqlite:///%kernel.project_dir%/data/database.sqlite
-      run: vendor/bin/phpunit
+        php bin/console app:core:contract
+        php vendor/bin/phpunit tests/Unit/Console/CoreContractCommandTest.php tests/Unit/Console/CustomCheckCompatCommandTest.php --configuration phpunit.dist.xml

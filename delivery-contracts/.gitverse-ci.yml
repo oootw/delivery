@@ -1,0 +1,25 @@
+stages:
+  - ci
+  - release
+
+contracts_ci:
+  stage: ci
+  image: php:8.4-cli
+  before_script:
+    - php -v
+  script:
+    - php tools/contract_check.php
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'
+
+contracts_publish:
+  stage: release
+  image: alpine:3.20
+  script:
+    - echo "Публикация версии contracts ${RELEASE_VERSION:-$(cat VERSION)}"
+    - echo "Перед push тега убедитесь, что CHANGELOG обновлён."
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+

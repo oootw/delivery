@@ -6,17 +6,16 @@ namespace App\Application\Customization\Feature;
 
 use App\Application\Customization\Entity\WorkspaceFeatureGrant\WorkspaceFeatureGrantRepositoryInterface;
 use App\Application\Customization\Registry\CustomModuleRegistry;
-use App\Application\Subscription\Entity\Subscription\SubscriptionRepositoryInterface;
-use App\Application\Tarif\Entity\Tarif\TarifRepositoryInterface;
+use App\Application\License\Contract\LicenseProviderInterface;
+use App\Application\License\Enum\LicenseStatusEnum;
 use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
 use App\Shared\Enum\Feature\FeatureCodeEnum;
 
 /**
  * Реализация единого гейта возможностей.
  *
- * Источник 1 — тариф: воркспейс → владелец (Workspace.ownerId) → активная подписка
- *   (findActiveByUser) → тариф → его features. Неактивная/просроченная подписка фич не даёт.
- * Источник 2 — активные клиентские модули воркспейса (их capabilities()).
+ * Источник 1 — закэшированная лицензия control-plane (тариф + набор features).
+ * Источник 2 — активные клиентские модули сервера (их capabilities()).
  * Источник 3 — точечные гранты (workspace_feature_grant), путь «доплатил → включили».
  *
  * Доступ = объединение источников. Всё по workspace_id — устойчиво к смене любых slug.
@@ -25,8 +24,7 @@ final class FeatureGate implements FeatureGateInterface
 {
     public function __construct(
         private readonly WorkspaceRepositoryInterface $workspaces,
-        private readonly SubscriptionRepositoryInterface $subscriptions,
-        private readonly TarifRepositoryInterface $tarifs,
+        private readonly LicenseProviderInterface $licenseProvider,
         private readonly CustomModuleRegistry $modules,
         private readonly WorkspaceFeatureGrantRepositoryInterface $grants,
     ) {}
@@ -54,21 +52,21 @@ final class FeatureGate implements FeatureGateInterface
      */
     private function tarifFeatures(int $workspaceId): array
     {
-        $workspace = $this->workspaces->findById($workspaceId);
-
-        if ($workspace === null) {
+        if ($this->workspaces->findById($workspaceId) === null) {
             return [];
         }
 
-        $subscription = $this->subscriptions->findActiveByUser($workspace->ownerId);
-
-        if ($subscription === null) {
+        try {
+            $license = $this->licenseProvider->getSnapshot();
+        } catch (\Throwable) {
             return [];
         }
 
-        $tarif = $this->tarifs->getByTarifCode($subscription->tarifCode);
+        if ($license->status !== LicenseStatusEnum::Active) {
+            return [];
+        }
 
-        return $tarif?->features ?? [];
+        return $license->features;
     }
 
     /**
@@ -76,9 +74,13 @@ final class FeatureGate implements FeatureGateInterface
      */
     private function moduleFeatures(int $workspaceId): array
     {
+        if ($this->workspaces->findById($workspaceId) === null) {
+            return [];
+        }
+
         $features = [];
 
-        foreach ($this->modules->activeFor($workspaceId) as $module) {
+        foreach ($this->modules->all() as $module) {
             foreach ($module->capabilities() as $feature) {
                 $features[] = $feature;
             }

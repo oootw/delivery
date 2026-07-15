@@ -23,3 +23,18 @@
 /.php-cs-fixer.php
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
+
+# Overlay-каталог владельца: по умолчанию игнорируем, но оставляем
+# коммитимые шаблонные файлы скелета для фазы 1.
+/custom/*
+!/custom/config/
+!/custom/src/
+!/custom/migrations/
+!/custom/tests/
+!/custom/manifest.json
+!/custom/composer.json
+!/custom/config/services.yaml
+!/custom/config/routes.yaml
+!/custom/src/.gitkeep
+!/custom/migrations/.gitkeep
+!/custom/tests/.gitkeep

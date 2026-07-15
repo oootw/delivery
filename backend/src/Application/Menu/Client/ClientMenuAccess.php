@@ -10,7 +10,7 @@ use App\Application\Workspace\Entity\Workspace\Workspace;
 use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
 
 /**
- * Доступ клиента к витрине меню: бренд определяется по slug воркспейса (из поддомена),
+ * Доступ клиента к витрине меню: бренд определяется по workspace_id сервера,
  * членство в воркспейсе не требуется. Проверяет, что запрошенная точка принадлежит
  * этому воркспейсу — клиент бренда A не должен читать точки бренда B.
  */
@@ -21,9 +21,9 @@ final class ClientMenuAccess
         private readonly VenueRepositoryInterface $venues,
     ) {}
 
-    public function workspaceBySlug(string $slug): Workspace
+    public function workspaceById(int $workspaceId): Workspace
     {
-        $workspace = $this->workspaces->findBySlug($slug);
+        $workspace = $this->workspaces->findById($workspaceId);
 
         if ($workspace === null) {
             throw new \DomainException('Бренд не найден');
@@ -32,10 +32,10 @@ final class ClientMenuAccess
         return $workspace;
     }
 
-    /** Точка, принадлежащая воркспейсу этого slug. Иначе — ошибка доступа. */
-    public function venueOfWorkspace(string $slug, int $venueId): Venue
+    /** Точка, принадлежащая воркспейсу сервера. Иначе — ошибка доступа. */
+    public function venueOfWorkspace(int $workspaceId, int $venueId): Venue
     {
-        $workspace = $this->workspaceBySlug($slug);
+        $workspace = $this->workspaceById($workspaceId);
 
         $venue = $this->venues->findById($venueId);
 

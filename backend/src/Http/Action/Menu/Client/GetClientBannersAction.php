@@ -26,7 +26,7 @@ class GetClientBannersAction extends AbstractController
         try {
             $banners = $this->getClientBanners->fetch(
                 new GetClientBannersByVenueIdQuery(
-                    workspaceSlug: $this->workspaceContext->getSlug(),
+                    workspaceId: $this->workspaceContext->getWorkspaceId(),
                     venueId: $venueId,
                 ),
             );

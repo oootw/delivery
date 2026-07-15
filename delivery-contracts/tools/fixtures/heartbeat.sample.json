@@ -1,0 +1,13 @@
+{
+  "request": {
+    "server_token": "token-example",
+    "core_ref": "v2.0.0",
+    "contract_version": "1.0.0",
+    "health_status": "ok"
+  },
+  "response": {
+    "accepted": true,
+    "target_core_ref": "v2.0.1",
+    "pinned": false
+  }
+}

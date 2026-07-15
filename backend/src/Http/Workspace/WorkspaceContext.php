@@ -7,37 +7,35 @@ namespace App\Http\Workspace;
 /**
  * Контекст текущего воркспейса в рамках HTTP-запроса.
  *
- * Slug определяется из поддомена (slug.app.com), в dev — из заголовка X-Workspace-Slug.
+ * Идентификатор воркспейса фиксируется на сервере через WORKSPACE_ID в окружении.
  * Заполняется в WorkspaceContextListener и читается в Action'ах, чтобы передать
- * идентификатор воркспейса в Command/Query явным параметром.
- *
- * Привязка slug -> workspaceId появится вместе с WorkspaceRepository (веха M2).
+ * workspace_id в Command/Query явным параметром.
  */
 final class WorkspaceContext
 {
-    private ?string $slug = null;
+    private ?int $workspaceId = null;
 
-    public function bindSlug(string $slug): void
+    public function bindWorkspaceId(int $workspaceId): void
     {
-        $this->slug = $slug;
+        $this->workspaceId = $workspaceId;
     }
 
     public function hasWorkspace(): bool
     {
-        return $this->slug !== null;
+        return $this->workspaceId !== null;
     }
 
-    public function findSlug(): ?string
+    public function findWorkspaceId(): ?int
     {
-        return $this->slug;
+        return $this->workspaceId;
     }
 
-    public function getSlug(): string
+    public function getWorkspaceId(): int
     {
-        if ($this->slug === null) {
+        if ($this->workspaceId === null) {
             throw new \DomainException('Воркспейс не определён для текущего запроса');
         }
 
-        return $this->slug;
+        return $this->workspaceId;
     }
 }

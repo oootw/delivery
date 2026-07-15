@@ -6,18 +6,14 @@ namespace App\Tests\Unit\Customization;
 
 use App\Application\Customization\Contract\AbstractCustomModule;
 use App\Application\Customization\Contract\CustomModuleInterface;
-use App\Application\Customization\Entity\WorkspaceCustomModule\WorkspaceCustomModule;
-use App\Application\Customization\Entity\WorkspaceCustomModule\WorkspaceCustomModuleRepositoryInterface;
 use App\Application\Customization\Entity\WorkspaceFeatureGrant\WorkspaceFeatureGrant;
 use App\Application\Customization\Entity\WorkspaceFeatureGrant\WorkspaceFeatureGrantRepositoryInterface;
 use App\Application\Customization\Feature\FeatureGate;
 use App\Application\Customization\Registry\CustomModuleRegistry;
-use App\Application\Subscription\Entity\Subscription\Subscription;
-use App\Application\Subscription\Entity\Subscription\SubscriptionRepositoryInterface;
-use App\Application\Subscription\Entity\Subscription\SubscriptionStatusEnum;
-use App\Application\Tarif\Entity\Tarif\Tarif;
+use App\Application\License\Contract\LicenseProviderInterface;
+use App\Application\License\Enum\LicenseStatusEnum;
+use App\Application\License\ValueObject\LicenseSnapshot;
 use App\Application\Tarif\Entity\Tarif\TarifCodeEnum;
-use App\Application\Tarif\Entity\Tarif\TarifRepositoryInterface;
 use App\Application\Workspace\Entity\Workspace\Workspace;
 use App\Application\Workspace\Entity\Workspace\WorkspaceRepositoryInterface;
 use App\Shared\Enum\Feature\FeatureCodeEnum;
@@ -64,7 +60,7 @@ final class FeatureGateTest extends TestCase
             tarifFeatures: [FeatureCodeEnum::ANALYTICS],
             moduleFeatures: [],
             grantedFeatures: [FeatureCodeEnum::SUPPORT],
-            hasActiveSubscription: false,
+            licenseStatus: LicenseStatusEnum::PastDue,
         );
 
         self::assertFalse($gate->has(self::WORKSPACE_ID, FeatureCodeEnum::ANALYTICS));
@@ -92,12 +88,11 @@ final class FeatureGateTest extends TestCase
         array $tarifFeatures,
         array $moduleFeatures,
         array $grantedFeatures,
-        bool $hasActiveSubscription = true,
+        LicenseStatusEnum $licenseStatus = LicenseStatusEnum::Active,
     ): FeatureGate {
         return new FeatureGate(
             $this->workspaces(),
-            $this->subscriptions($hasActiveSubscription),
-            $this->tarifs($tarifFeatures),
+            $this->licenseProvider($tarifFeatures, $licenseStatus),
             $this->registry($moduleFeatures),
             $this->grants($grantedFeatures),
         );
@@ -148,90 +143,34 @@ final class FeatureGateTest extends TestCase
         };
     }
 
-    private function subscriptions(bool $hasActive): SubscriptionRepositoryInterface
-    {
-        return new class($hasActive) implements SubscriptionRepositoryInterface {
-            public function __construct(private readonly bool $hasActive) {}
-
-            public function findActiveByUser(int $userId): ?Subscription
-            {
-                if (!$this->hasActive || $userId !== FeatureGateTest::OWNER_ID) {
-                    return null;
-                }
-
-                $now = new \DateTimeImmutable();
-
-                return new Subscription(
-                    id: 1,
-                    userId: $userId,
-                    tarifCode: TarifCodeEnum::PRO,
-                    status: SubscriptionStatusEnum::Active,
-                    invoiceId: 'inv-1',
-                    externalId: null,
-                    currentPeriodEnd: $now,
-                    createdAt: $now,
-                    updatedAt: $now,
-                );
-            }
-
-            public function save(Subscription $subscription): int
-            {
-                return 0;
-            }
-
-            public function findById(int $id): ?Subscription
-            {
-                return null;
-            }
-
-            public function findByInvoiceId(string $invoiceId): ?Subscription
-            {
-                return null;
-            }
-
-            public function findByExternalId(string $externalId): ?Subscription
-            {
-                return null;
-            }
-
-            public function findPendingByUser(int $userId): ?Subscription
-            {
-                return null;
-            }
-
-            public function findLatestByUser(int $userId): ?Subscription
-            {
-                return null;
-            }
-
-            public function findPastDueOlderThan(\DateTimeImmutable $updatedBefore): array
-            {
-                return [];
-            }
-        };
-    }
-
     /**
      * @param list<FeatureCodeEnum> $features
      */
-    private function tarifs(array $features): TarifRepositoryInterface
+    private function licenseProvider(array $features, LicenseStatusEnum $status): LicenseProviderInterface
     {
-        return new class($features) implements TarifRepositoryInterface {
-            /** @param list<FeatureCodeEnum> $features */
-            public function __construct(private readonly array $features) {}
+        return new class($features, $status) implements LicenseProviderInterface {
+            /**
+             * @param list<FeatureCodeEnum> $features
+             */
+            public function __construct(
+                private readonly array $features,
+                private readonly LicenseStatusEnum $status,
+            ) {}
 
-            public function getAllTarifs(): array
+            public function getSnapshot(): LicenseSnapshot
             {
-                return [];
+                return new LicenseSnapshot(
+                    tarifCode: TarifCodeEnum::PRO,
+                    features: $this->features,
+                    status: $this->status,
+                    validUntil: null,
+                    fetchedAt: new \DateTimeImmutable(),
+                );
             }
 
-            public function getByTarifCode(TarifCodeEnum $tarifCode): ?Tarif
+            public function refresh(): LicenseSnapshot
             {
-                if ($tarifCode !== TarifCodeEnum::PRO) {
-                    return null;
-                }
-
-                return Tarif::buildNew('Pro', TarifCodeEnum::PRO, '', 0, $this->features);
+                return $this->getSnapshot();
             }
         };
     }
@@ -261,29 +200,7 @@ final class FeatureGateTest extends TestCase
             }
         };
 
-        $activation = new class implements WorkspaceCustomModuleRepositoryInterface {
-            public function save(WorkspaceCustomModule $module): int
-            {
-                return 0;
-            }
-
-            public function findByWorkspaceAndSlug(int $workspaceId, string $slug): ?WorkspaceCustomModule
-            {
-                return null;
-            }
-
-            public function findByWorkspace(int $workspaceId): array
-            {
-                return [];
-            }
-
-            public function findEnabledSlugsByWorkspace(int $workspaceId): array
-            {
-                return $workspaceId === FeatureGateTest::WORKSPACE_ID ? ['acme'] : [];
-            }
-        };
-
-        return new CustomModuleRegistry([$module], $activation);
+        return new CustomModuleRegistry([$module]);
     }
 
     /**

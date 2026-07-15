@@ -1,0 +1,22 @@
+---
+- name: Подготовить control-plane хост
+  hosts: controlplane
+  gather_facts: true
+  become: true
+  vars:
+    app_clone_overlay: false
+    app_register_on_provision: false
+    core_repo: "{{ control_plane_repo }}"
+    release_ref: "{{ cp_release_ref | default(release_ref) }}"
+    deploy_use_custom_overlay: false
+    deploy_enable_overlay_compat: false
+  roles:
+    - base
+    - postgres
+    - app
+
+  tasks:
+    - name: Выполнить первичный деплой control-plane
+      ansible.builtin.include_role:
+        name: deploy
+      when: provision_run_initial_deploy | bool

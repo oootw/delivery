@@ -1,0 +1,54 @@
+stages:
+  - ci
+  - deploy
+
+control_plane_ci:
+  stage: ci
+  image: php:8.4-cli
+  before_script:
+    - apt-get update
+    - apt-get install -y git unzip libpq-dev libzip-dev
+    - docker-php-ext-install pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - composer install --no-interaction --prefer-dist
+  script:
+    - php -l src/Http/Action/ControlPlane/RegisterServerAction.php
+    - php -l src/Http/Action/ControlPlane/GetLicenseAction.php
+    - php -l src/Http/Action/ControlPlane/HeartbeatAction.php
+    - php -l src/Http/Action/ControlPlane/CreateReleaseAction.php
+    - php -l src/Http/Action/ControlPlane/GetLatestReleaseAction.php
+    - php -l src/Http/Action/ControlPlane/GetServersAction.php
+    - php -l src/Http/Action/Authorize/IssueTokenAction.php
+    - php -l src/Http/Action/System/HealthzAction.php
+    - php -l src/Console/Command/ImportLegacyDataCommand.php
+    - php -l src/Console/Command/SeedTarifsCommand.php
+    - php tools/contract_compat_check.php
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_MERGE_REQUEST_ID'
+
+control_plane_deploy:
+  stage: deploy
+  image: python:3.12
+  needs:
+    - control_plane_ci
+  before_script:
+    - pip install ansible-core ansible-lint
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf '%s' "$CP_DEPLOY_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+  script:
+    - cd ../delivery-infra
+    - ansible-galaxy collection install -r collections/requirements.yml
+    - printf '%s' "$ANSIBLE_VAULT_PASSWORD" > .vault-pass
+    - chmod 600 .vault-pass
+    - ansible-playbook -i inventory/production/hosts.yml playbooks/control-plane-deploy.yml --vault-password-file .vault-pass
+  after_script:
+    - rm -f ../delivery-infra/.vault-pass
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+

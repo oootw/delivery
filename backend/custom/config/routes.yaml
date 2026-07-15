@@ -1,0 +1,4 @@
+custom_controllers:
+    resource: '../src/'
+    type: attribute
+    prefix: /api/v1

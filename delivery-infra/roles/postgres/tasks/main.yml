@@ -1,0 +1,47 @@
+---
+- name: Установить пакеты PostgreSQL на Debian
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+    state: present
+    update_cache: true
+  when:
+    - not postgres_managed | bool
+    - ansible_facts.os_family == "Debian"
+
+- name: Запустить и включить сервис PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+  when: not postgres_managed | bool
+
+- name: Создать роль PostgreSQL для приложения
+  community.postgresql.postgresql_user:
+    name: "{{ postgres_db_user }}"
+    password: "{{ vault_postgres_password }}"
+    state: present
+  become: true
+  become_user: postgres
+  when: not postgres_managed | bool
+
+- name: Создать базу данных приложения
+  community.postgresql.postgresql_db:
+    name: "{{ postgres_db_name }}"
+    owner: "{{ postgres_db_user }}"
+    state: present
+  become: true
+  become_user: postgres
+  when: not postgres_managed | bool
+
+- name: Сформировать URL локальной базы данных
+  ansible.builtin.set_fact:
+    postgres_database_url: >-
+      postgresql://{{ postgres_db_user }}:{{ vault_postgres_password }}@127.0.0.1:5432/{{ postgres_db_name }}?serverVersion={{ postgres_version }}&charset=utf8
+  when: not postgres_managed | bool
+
+- name: Сформировать URL managed-базы данных
+  ansible.builtin.set_fact:
+    postgres_database_url: "{{ vault_managed_database_url }}"
+  when: postgres_managed | bool

@@ -7,6 +7,6 @@ namespace App\Application\Menu\Query\GetClientVenuesByWorkspaceId;
 class GetClientVenuesByWorkspaceIdQuery
 {
     public function __construct(
-        public readonly string $workspaceSlug,
+        public readonly int $workspaceId,
     ) {}
 }
